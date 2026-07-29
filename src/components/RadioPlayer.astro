@@ -1,0 +1,50 @@
+---
+import { site } from "../data/site";
+import { withBase } from "../lib/base";
+---
+<div class="rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)] p-6 sm:p-8 max-w-md mx-auto text-center">
+  <div class="relative mx-auto h-24 w-24 grid place-items-center rounded-full" style="background:linear-gradient(135deg,var(--color-gold),var(--color-accent))">
+    <img src={withBase("/images/site/iso-toqui.png")} alt="" class="h-16 w-auto drop-shadow" />
+    <span id="radio-pulse" class="absolute inset-0 rounded-full ring-4 ring-[var(--color-accent)]/50 hidden"></span>
+  </div>
+  <h3 class="mt-5 text-xl font-bold">{site.radioNombre}</h3>
+  <p class="text-sm text-[var(--color-muted)] mt-1">Transmisión en vivo · La voz de nuestra comunidad</p>
+
+  <button id="radio-toggle" class="btn btn-primary mt-6 mx-auto text-base !px-8" aria-label="Reproducir radio">
+    <svg id="radio-icon-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    <svg id="radio-icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="hidden"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+    <span id="radio-label">Escuchar en vivo</span>
+  </button>
+  <audio id="radio-audio" preload="none" src={site.radioStream}></audio>
+</div>
+
+<script>
+  const audio = document.getElementById("radio-audio") as HTMLAudioElement | null;
+  const btn = document.getElementById("radio-toggle");
+  const iconPlay = document.getElementById("radio-icon-play");
+  const iconPause = document.getElementById("radio-icon-pause");
+  const label = document.getElementById("radio-label");
+  const pulse = document.getElementById("radio-pulse");
+  let playing = false;
+  btn?.addEventListener("click", () => {
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+    } else {
+      label && (label.textContent = "Conectando…");
+      audio.play().catch(() => { label && (label.textContent = "No se pudo conectar"); });
+    }
+  });
+  audio?.addEventListener("playing", () => {
+    playing = true;
+    iconPlay?.classList.add("hidden"); iconPause?.classList.remove("hidden");
+    pulse?.classList.remove("hidden"); pulse?.classList.add("animate-ping");
+    label && (label.textContent = "En vivo · Pausar");
+  });
+  audio?.addEventListener("pause", () => {
+    playing = false;
+    iconPause?.classList.add("hidden"); iconPlay?.classList.remove("hidden");
+    pulse?.classList.add("hidden"); pulse?.classList.remove("animate-ping");
+    label && (label.textContent = "Escuchar en vivo");
+  });
+</script>

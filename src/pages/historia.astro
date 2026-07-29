@@ -1,0 +1,94 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import { withBase } from "../lib/base";
+
+const hitos = [
+  ["1987", "Fundación", "Don José Guillermo Araneda Cáceres funda la escuela en el sector de Potrero, movido por su vocación y amor a las comunidades."],
+  ["1988", "Reconocimiento oficial", "El 3 de mayo la escuela es reconocida por el Estado como institución educativa uni-docente, con 30 estudiantes."],
+  ["1998", "Nuevo hogar", "Con el apoyo de la comunidad y de la Sra. Marcelina Neculqueo, la escuela se traslada a Paicaví Chico km 23, con terreno propio y jornada escolar completa."],
+  ["2004", "Legado", "Fallece Don José Araneda. La escuela continúa rindiendo honor a su fundador, impartiendo educación de Pre-Kinder a 8° básico."],
+  ["2018", "Corporación", "La institución pasa a ser la Corporación Educacional José Guillermo Araneda Cáceres."],
+  ["Hoy", "Comunidad viva", "Bajo la dirección de Don Manuel Marileo Astorga, la escuela supera los 320 estudiantes y un equipo multiprofesional completo."],
+];
+const directorio = [
+  "Sra. Sandra Araneda Fica — Representante Legal",
+  "Sra. Pilar Araneda Fica",
+  "Sra. Ana Araneda Fica",
+  "Sra. Ruth Araneda Fica",
+  "Sr. Felipe Marileo Araneda",
+];
+---
+<BaseLayout
+  title="Historia · Escuela Nuevo Toqui Caupolicán"
+  description="Desde 1987, la historia de la Escuela Particular Nuevo Toqui Caupolicán de Cañete: la vocación de su fundador Don José Araneda y una comunidad que sigue creciendo."
+>
+  <PageHeader kicker="Nuestra historia" titulo="36 años (y contando) de vocación y comunidad"
+    bajada="Una escuela nacida del amor por nuestro territorio, que hoy forma a más de 320 niños y niñas." />
+
+  <section class="py-[var(--space-section)] lg:py-[var(--space-section-lg)]">
+    <div class="container-x grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-start">
+      <div class="relative lg:sticky lg:top-28">
+        <div class="absolute -top-4 -left-4 h-24 w-24 rounded-2xl" style="background:linear-gradient(135deg,var(--color-gold),var(--color-accent))"></div>
+        <img src={withBase("/images/site/historia.png")} alt="Escuela Nuevo Toqui Caupolicán" class="relative rounded-[var(--radius-card)] shadow-[var(--shadow-card)] w-full object-cover" loading="lazy" />
+      </div>
+      <div class="prosa !max-w-none">
+        <p class="text-lg leading-relaxed">
+          La <strong>Escuela Particular Nuevo Toqui Caupolicán</strong> fue fundada en 1987 por
+          Don José Guillermo Araneda Cáceres. Recién el 3 de mayo de 1988 fue reconocida por el
+          Estado como institución educativa uni-docente, con una matrícula de 30 estudiantes,
+          ubicada en el sector de Potrero.
+        </p>
+        <p>
+          Con los años y el esfuerzo de Don José —quien llegó a trabajar incluso sin recibir
+          apoyo financiero del Estado, haciendo uso de su vocación y amor por nuestras
+          comunidades— la escuela llegó a impartir cursos hasta 8° año básico.
+        </p>
+        <p>
+          En 1998, con el respaldo de la comunidad y en especial el apoyo de la Sra. Marcelina
+          Neculqueo, la escuela se cambia al sector de Paicaví Chico km 23, donde nos
+          encontramos actualmente, con terreno propio e incorporando la jornada escolar completa.
+        </p>
+        <p>
+          En 2004 fallece Don José Araneda, dejando un vacío profundo en la comunidad. La
+          escuela se ha mantenido en funcionamiento rindiendo honores a su fundador, impartiendo
+          educación desde Pre-Kinder a 8° básico, con docentes especialistas en todas las áreas
+          e incluyendo el Programa de Integración Escolar (PIE), con profesionales en
+          fonoaudiología, psicología educativa y terapia ocupacional infantil.
+        </p>
+        <p>
+          En 2018, la institución pasa de ser "Sociedad Educacional Araneda y Compañía Limitada"
+          a la <strong>Corporación Educacional José Guillermo Araneda Cáceres</strong>. Hoy la
+          escuela es liderada por su director Don Manuel Marileo Astorga y cuenta con una
+          matrícula que supera los 320 estudiantes.
+        </p>
+
+        <div class="mt-8 rounded-[var(--radius-card)] p-6" style="background:var(--color-surface-alt)">
+          <h3 class="!mt-0 text-xl">Directorio de la Corporación</h3>
+          <ul class="mt-3 space-y-1.5 text-[var(--color-muted)]">
+            {directorio.map((d) => <li>{d}</li>)}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Línea de tiempo -->
+  <section class="py-[var(--space-section)]" style="background:var(--color-surface-alt)">
+    <div class="container-x">
+      <div class="text-center max-w-2xl mx-auto">
+        <p class="kicker">Línea de tiempo</p>
+        <h2 class="mt-3 text-3xl sm:text-4xl font-bold">Hitos de nuestra historia</h2>
+      </div>
+      <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {hitos.map(([year, t, d]) => (
+          <div class="rounded-[var(--radius-card)] bg-white p-6 shadow-[var(--shadow-soft)] border-t-4" style="border-color:var(--color-accent)">
+            <p class="font-[var(--font-display)] text-3xl font-black" style="color:var(--color-primary)">{year}</p>
+            <h3 class="mt-2 text-lg font-bold">{t}</h3>
+            <p class="mt-2 text-sm text-[var(--color-muted)] leading-relaxed">{d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

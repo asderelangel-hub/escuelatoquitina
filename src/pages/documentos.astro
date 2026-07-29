@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+
+// ⚠️ Los PDF reales los entrega Felipe/cliente. Reemplazar href="#" por la ruta
+// del archivo en /public/docs/ cuando estén disponibles.
+const documentos = [
+  { titulo: "Proyecto Educativo Institucional (PEI)", desc: "El corazón de nuestro quehacer: visión, misión, sellos y objetivos que orientan la formación de nuestros estudiantes.", href: "#" },
+  { titulo: "Reglamento de Convivencia Escolar", desc: "Normas y acuerdos que aseguran una convivencia sana, respetuosa e inclusiva en toda la comunidad.", href: "#" },
+  { titulo: "Reglamento de Evaluación", desc: "Criterios y procedimientos de evaluación, calificación y promoción de nuestros estudiantes.", href: "#" },
+];
+---
+<BaseLayout
+  title="Documentos · Escuela Nuevo Toqui Caupolicán"
+  description="Documentos institucionales y recursos académicos de la Escuela Nuevo Toqui Caupolicán: Proyecto Educativo Institucional, Reglamento de Convivencia y Reglamento de Evaluación."
+>
+  <PageHeader kicker="Documentos institucionales" titulo="Documentos y recursos académicos"
+    bajada="Aquí encontrarás los documentos que orientan la vida y el quehacer de nuestra escuela." />
+
+  <section class="py-[var(--space-section)] lg:py-[var(--space-section-lg)]">
+    <div class="container-x grid gap-6 md:grid-cols-3">
+      {documentos.map((doc) => (
+        <a href={doc.href} class:list={["group flex flex-col rounded-[var(--radius-card)] bg-white p-7 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-card)] transition-all hover:-translate-y-1 border-t-4", doc.href === "#" ? "pointer-events-auto" : ""]} style="border-color:var(--color-primary)">
+          <span class="grid place-items-center h-14 w-14 rounded-2xl text-white" style="background:linear-gradient(135deg,var(--color-primary),var(--color-primary-dark))">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+          </span>
+          <h3 class="mt-5 text-lg font-bold leading-snug">{doc.titulo}</h3>
+          <p class="mt-2 text-sm text-[var(--color-muted)] leading-relaxed flex-1">{doc.desc}</p>
+          <span class="mt-5 inline-flex items-center gap-1.5 font-bold text-sm" style="color:var(--color-primary)">
+            {doc.href === "#" ? "Próximamente" : "Descargar PDF"}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="transition-transform group-hover:translate-y-0.5"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+          </span>
+        </a>
+      ))}
+    </div>
+    <div class="container-x mt-10">
+      <p class="text-sm text-[var(--color-muted)]">¿Necesitas otro documento o certificado? Escríbenos desde la página de <a href="/contacto" class="font-semibold" style="color:var(--color-primary)">contacto</a>.</p>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,58 @@
+---
+import { withBase } from "../lib/base";
+import { nav, site } from "../data/site";
+const year = new Date().getFullYear();
+---
+<footer class="relative overflow-hidden text-white" style="background:var(--color-primary-dark)">
+  <div class="rayos absolute inset-0 opacity-40 pointer-events-none"></div>
+  <div class="container-x relative py-14">
+    <div class="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+      <div>
+        <div class="flex items-center gap-3">
+          <img src={withBase("/images/site/iso-toqui-white.png")} alt="" width="52" height="52" class="h-13 w-auto" />
+          <div class="leading-tight">
+            <p class="font-[var(--font-display)] font-extrabold text-lg">Nuevo Toqui Caupolicán</p>
+            <p class="text-white/70 text-sm">Escuela Particular · {site.ciudad}</p>
+          </div>
+        </div>
+        <p class="mt-5 text-white/80 max-w-sm leading-relaxed">
+          {site.saludoMapudungun}. Una comunidad educativa con altas expectativas, identidad
+          mapuche lafkenche y valores cristianos, desde 1987.
+        </p>
+        <div class="mt-5 flex gap-3">
+          <a href={site.facebook} target="_blank" rel="noopener" aria-label="Facebook"
+            class="grid place-items-center h-10 w-10 rounded-full bg-white/10 hover:bg-[var(--color-accent)] hover:text-[var(--color-ink)] transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.25-1.5 1.5-1.5h1.6V4.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.1v2.3H7.9V14h2.3v8h3.3Z"/></svg>
+          </a>
+          <a href={withBase("/radio")} aria-label="Radio en vivo"
+            class="grid place-items-center h-10 w-10 rounded-full bg-white/10 hover:bg-[var(--color-accent)] hover:text-[var(--color-ink)] transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h16v9H4z"/><circle cx="15" cy="14.5" r="2.2"/><path d="m16 3-9 4"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-white font-bold mb-4 text-sm uppercase tracking-wider">Explorar</h3>
+        <ul class="space-y-2.5">
+          {nav.map((i) => (
+            <li><a href={withBase(i.href)} class="text-white/80 hover:text-[var(--color-gold)] transition-colors">{i.label}</a></li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-white font-bold mb-4 text-sm uppercase tracking-wider">Contacto</h3>
+        <ul class="space-y-3 text-white/80">
+          <li class="flex gap-2.5"><span aria-hidden>📍</span><span>{site.direccion}<br/>{site.region}</span></li>
+          {site.telefono && <li class="flex gap-2.5"><span aria-hidden>📞</span><a href={`tel:${site.telefono}`} class="hover:text-[var(--color-gold)]">{site.telefono}</a></li>}
+          {site.email && <li class="flex gap-2.5"><span aria-hidden>✉️</span><a href={`mailto:${site.email}`} class="hover:text-[var(--color-gold)]">{site.email}</a></li>}
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-12 pt-6 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-white/60">
+      <p>© {year} {site.nombreLargo}. Todos los derechos reservados.</p>
+      <p>Sitio por <a href="https://pandorastudio.cl" target="_blank" rel="noopener" class="text-white/80 hover:text-[var(--color-gold)] font-semibold">Pandora Studio</a></p>
+    </div>
+  </div>
+</footer>

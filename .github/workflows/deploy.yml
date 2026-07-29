@@ -1,0 +1,36 @@
+name: Build y deploy (TinaCMS + Astro → FTP)
+on:
+  push: { branches: [main] }
+  workflow_dispatch: {}
+concurrency:
+  group: deploy-escuela-toqui
+  cancel-in-progress: true
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Build (TinaCMS si hay credenciales; si no, Astro solo)
+        run: |
+          if [ -n "$TINA_CLIENT_ID" ]; then npm run build:cms; else npm run build; fi
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096   # evita exit 134 / heap OOM
+          PUBLIC_SITE_URL: https://escuelatoqui.cl
+          TINA_CLIENT_ID: ${{ secrets.TINA_CLIENT_ID }}
+          TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
+          TINA_BRANCH: main
+      - name: Deploy por FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /public_html/
+          protocol: ftps
+          exclude: |
+            **/.git*
+            **/.git*/**

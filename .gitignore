@@ -1,0 +1,16 @@
+# deps / build
+node_modules/
+dist/
+.astro/
+
+# entorno / secretos
+.env
+.env.*
+
+# TinaCMS generado (se regenera en cada build)
+public/admin/
+tina/__generated__/
+
+# SO
+.DS_Store
+Thumbs.db

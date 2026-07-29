@@ -1,0 +1,34 @@
+---
+import { withBase } from "../lib/base";
+interface Props {
+  slug: string;
+  title: string;
+  description?: string;
+  cover?: string;
+  categoria?: string;
+  pubDate: Date;
+  featured?: boolean;
+}
+const { slug, title, description, cover, categoria = "Noticias", pubDate, featured = false } = Astro.props;
+const cov = cover ? (cover.startsWith("/") ? cover : "/" + cover) : null;
+const fecha = pubDate.toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+---
+<article class:list={["group flex flex-col rounded-[var(--radius-card)] overflow-hidden bg-white shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1", featured ? "md:flex-row" : ""]}>
+  <a href={withBase(`/noticias/${slug}`)} class:list={["block overflow-hidden relative bg-[var(--color-surface-alt)]", featured ? "md:w-1/2 aspect-[16/10] md:aspect-auto" : "aspect-[16/10]"]}>
+    {cov
+      ? <img src={withBase(cov)} alt={title} loading="lazy" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+      : <div class="h-full w-full grid place-items-center rayos"><img src={withBase("/images/site/iso-toqui.png")} alt="" class="h-16 opacity-60"/></div>}
+    <span class="absolute top-3 left-3 text-[0.7rem] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full text-white" style="background:var(--color-primary)">{categoria}</span>
+  </a>
+  <div class:list={["flex flex-col p-5", featured ? "md:w-1/2 md:justify-center md:p-8" : ""]}>
+    <time class="text-xs font-semibold uppercase tracking-wide" style="color:var(--color-earth)">{fecha}</time>
+    <h3 class:list={["mt-2 font-bold leading-snug", featured ? "text-2xl md:text-3xl" : "text-lg"]}>
+      <a href={withBase(`/noticias/${slug}`)} class="hover:text-[var(--color-primary)] transition-colors">{title}</a>
+    </h3>
+    {description && <p class:list={["mt-2 text-[var(--color-muted)] leading-relaxed", featured ? "line-clamp-4" : "line-clamp-2 text-sm"]}>{description}</p>}
+    <a href={withBase(`/noticias/${slug}`)} class="mt-4 inline-flex items-center gap-1.5 font-bold text-sm" style="color:var(--color-primary)">
+      Leer más
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="transition-transform group-hover:translate-x-1"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+</article>

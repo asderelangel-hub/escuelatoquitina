@@ -1,0 +1,72 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import NoticiaCard from "../../components/NoticiaCard.astro";
+import { withBase } from "../../lib/base";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("noticias", ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+const { post } = Astro.props;
+const { Content } = await render(post);
+const d = post.data;
+const cover = d.cover ? (d.cover.startsWith("/") ? d.cover : "/" + d.cover) : null;
+const fecha = d.pubDate.toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+
+const relacionadas = (await getCollection("noticias", ({ data }) => !data.draft))
+  .filter((p) => p.id !== post.id)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .slice(0, 3);
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  headline: d.title,
+  datePublished: d.pubDate.toISOString(),
+  image: cover ? new URL(withBase(cover), Astro.site).toString() : undefined,
+  publisher: { "@type": "Organization", name: "Escuela Nuevo Toqui Caupolicán" },
+};
+---
+<BaseLayout title={`${d.title} · Noticias`} description={d.description} ogImage={cover ?? undefined} schemaJsonLd={schema}>
+  <article>
+    <!-- Cabecera del post -->
+    <header class="relative overflow-hidden text-white pt-32 pb-14" style="background:var(--color-primary-dark)">
+      {cover && <img src={withBase(cover)} alt="" class="absolute inset-0 h-full w-full object-cover opacity-30" />}
+      <div class="rayos absolute inset-0 opacity-20"></div>
+      <div class="container-x relative max-w-3xl">
+        <a href={withBase("/noticias")} class="inline-flex items-center gap-1.5 text-white/80 hover:text-[var(--color-gold)] text-sm font-semibold">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          Volver a noticias
+        </a>
+        <span class="mt-5 inline-block text-[0.72rem] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full" style="background:var(--color-accent);color:var(--color-ink)">{d.categoria}</span>
+        <h1 class="mt-4 text-3xl sm:text-4xl font-black leading-tight">{d.title}</h1>
+        <time class="mt-4 block text-white/70 font-semibold">{fecha}</time>
+      </div>
+    </header>
+
+    <div class="py-[var(--space-section)]">
+      <div class="container-x">
+        {cover && (
+          <img src={withBase(cover)} alt={d.title} class="rounded-[var(--radius-card)] shadow-[var(--shadow-card)] w-full max-h-[520px] object-cover mx-auto max-w-4xl" />
+        )}
+        <div class="prosa mx-auto mt-10">
+          <Content />
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- Relacionadas -->
+  <section class="py-[var(--space-section)]" style="background:var(--color-surface-alt)">
+    <div class="container-x">
+      <h2 class="text-2xl sm:text-3xl font-bold">Más noticias</h2>
+      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {relacionadas.map((p) => (
+          <NoticiaCard slug={p.id} title={p.data.title} description={p.data.description}
+            cover={p.data.cover} categoria={p.data.categoria} pubDate={p.data.pubDate} />
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

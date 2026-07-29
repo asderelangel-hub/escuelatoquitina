@@ -1,0 +1,79 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import { withBase } from "../lib/base";
+
+const posts = (await getCollection("noticias", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+const imagenes = posts
+  .filter((p) => p.data.cover)
+  .map((p) => ({ src: p.data.cover!.startsWith("/") ? p.data.cover! : "/" + p.data.cover!, title: p.data.title }));
+---
+<BaseLayout
+  title="Galería · Escuela Nuevo Toqui Caupolicán"
+  description="Registro fotográfico de la vida escolar en la Escuela Nuevo Toqui Caupolicán: actividades, eventos, deporte y cultura de nuestra comunidad."
+>
+  <PageHeader kicker="Registro fotográfico" titulo="Nuestra comunidad en imágenes"
+    bajada="Cada foto cuenta una historia de aprendizaje, deporte, cultura y encuentro." />
+
+  <section class="py-[var(--space-section)] lg:py-[var(--space-section-lg)]">
+    <div class="container-x">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {imagenes.map((img, i) => (
+          <button class="galeria-item block overflow-hidden rounded-xl group aspect-square relative" data-src={withBase(img.src)} data-title={img.title} aria-label={`Ampliar: ${img.title}`}>
+            <img src={withBase(img.src)} alt={img.title} loading={i < 8 ? "eager" : "lazy"} class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <span class="absolute inset-0 bg-[var(--color-primary-dark)]/0 group-hover:bg-[var(--color-primary-dark)]/40 transition-colors grid place-items-center">
+              <svg class="opacity-0 group-hover:opacity-100 transition-opacity" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/85 p-4">
+    <button id="lb-close" class="absolute top-4 right-4 text-white/80 hover:text-white p-2" aria-label="Cerrar">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <button id="lb-prev" class="absolute left-3 sm:left-6 text-white/80 hover:text-white p-2" aria-label="Anterior">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button id="lb-next" class="absolute right-3 sm:right-6 text-white/80 hover:text-white p-2" aria-label="Siguiente">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <figure class="max-w-5xl w-full text-center">
+      <img id="lb-img" src="" alt="" class="max-h-[80vh] w-auto mx-auto rounded-lg" />
+      <figcaption id="lb-cap" class="mt-3 text-white/80 text-sm"></figcaption>
+    </figure>
+  </div>
+</BaseLayout>
+
+<script>
+  const items = Array.from(document.querySelectorAll<HTMLButtonElement>(".galeria-item"));
+  const lb = document.getElementById("lightbox")!;
+  const lbImg = document.getElementById("lb-img") as HTMLImageElement;
+  const lbCap = document.getElementById("lb-cap")!;
+  let idx = 0;
+  const show = (i: number) => {
+    idx = (i + items.length) % items.length;
+    const el = items[idx];
+    lbImg.src = el.dataset.src || "";
+    lbImg.alt = el.dataset.title || "";
+    lbCap.textContent = el.dataset.title || "";
+  };
+  const open = (i: number) => { show(i); lb.classList.remove("hidden"); lb.classList.add("flex"); document.body.style.overflow = "hidden"; };
+  const close = () => { lb.classList.add("hidden"); lb.classList.remove("flex"); document.body.style.overflow = ""; };
+  items.forEach((el, i) => el.addEventListener("click", () => open(i)));
+  document.getElementById("lb-close")?.addEventListener("click", close);
+  document.getElementById("lb-next")?.addEventListener("click", () => show(idx + 1));
+  document.getElementById("lb-prev")?.addEventListener("click", () => show(idx - 1));
+  lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+  document.addEventListener("keydown", (e) => {
+    if (lb.classList.contains("hidden")) return;
+    if (e.key === "Escape") close();
+    if (e.key === "ArrowRight") show(idx + 1);
+    if (e.key === "ArrowLeft") show(idx - 1);
+  });
+</script>

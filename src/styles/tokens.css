@@ -1,0 +1,32 @@
+/* ============================================================
+   TOKENS — Escuela Nuevo Toqui Caupolicán
+   Paleta extraída del logo (Caupolicán sobre el sol naciente).
+   Ver DESIGN-SYSTEM.md del cliente.
+   ============================================================ */
+
+@theme {
+  /* === COLORES === */
+  --color-primary: #8e1b1b;        /* granate institucional */
+  --color-primary-dark: #5e0f0f;   /* hover, footer, overlays */
+  --color-accent: #f5a11d;         /* naranja sol — CTAs de energía */
+  --color-gold: #fbc02d;           /* oro del sol — highlights */
+  --color-earth: #a8703c;          /* café/tierra del guerrero */
+  --color-surface: #fbf7f0;        /* fondo crema general */
+  --color-surface-alt: #f3ead9;    /* arena — secciones alternas */
+  --color-ink: #241c18;            /* texto principal (negro cálido) */
+  --color-muted: #6b5d54;          /* texto secundario, líneas */
+
+  /* === TIPOGRAFÍA === */
+  --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+  --font-body: "Mulish Variable", ui-sans-serif, system-ui, sans-serif;
+
+  /* === CARÁCTER VISUAL === */
+  --radius-card: 1rem;
+  --radius-button: 0.625rem;
+  --shadow-card: 0 10px 30px -12px rgb(94 15 15 / 0.18);
+  --shadow-soft: 0 4px 14px -6px rgb(36 28 24 / 0.12);
+
+  /* === RITMO DE ESPACIADO === */
+  --space-section: 4.5rem;
+  --space-section-lg: 7rem;
+}

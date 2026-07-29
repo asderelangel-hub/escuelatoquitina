@@ -1,0 +1,15 @@
+---
+import { withBase } from "../lib/base";
+interface Props { nombre: string; rol: string; descripcion?: string; foto?: string }
+const { nombre, rol, descripcion, foto } = Astro.props;
+const iniciales = nombre.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+const fot = foto ? (foto.startsWith("/") ? foto : "/" + foto) : null;
+---
+<article class="flex flex-col rounded-[var(--radius-card)] bg-white p-5 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-card)] transition-shadow text-center items-center">
+  {fot
+    ? <img src={withBase(fot)} alt={nombre} loading="lazy" class="h-24 w-24 rounded-full object-cover ring-4 ring-[var(--color-gold)]/40" />
+    : <div class="h-24 w-24 rounded-full grid place-items-center font-[var(--font-display)] font-extrabold text-2xl text-white ring-4 ring-[var(--color-gold)]/40" style="background:linear-gradient(135deg,var(--color-primary),var(--color-earth))">{iniciales}</div>}
+  <h3 class="mt-4 font-bold text-lg leading-tight">{nombre}</h3>
+  <p class="text-sm font-bold uppercase tracking-wide mt-1" style="color:var(--color-primary)">{rol}</p>
+  {descripcion && <p class="mt-3 text-sm text-[var(--color-muted)] leading-relaxed">{descripcion}</p>}
+</article>

@@ -1,0 +1,37 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import PersonaCard from "../components/PersonaCard.astro";
+
+const AREAS = ["Gestión", "Educación Pre-escolar", "Primer Ciclo", "Segundo Ciclo", "Equipo Multidisciplinario"];
+const todos = (await getCollection("equipo")).sort((a, b) => a.data.orden - b.data.orden);
+const porArea = AREAS.map((area) => ({
+  area,
+  personas: todos.filter((p) => p.data.area === area),
+})).filter((g) => g.personas.length > 0);
+---
+<BaseLayout
+  title="Equipo · Escuela Nuevo Toqui Caupolicán"
+  description="Conoce al equipo directivo, docente y multidisciplinario de la Escuela Nuevo Toqui Caupolicán: profesionales comprometidos con la formación integral de nuestros estudiantes."
+>
+  <PageHeader kicker="Nuestro equipo" titulo="Un equipo multiprofesional que deja huella"
+    bajada="Para educar y formar integralmente con altas expectativas, hemos constituido un amplio equipo de trabajo: directivos, docentes, educadoras diferenciales y especialistas del PIE." />
+
+  {porArea.map((grupo, i) => (
+    <section class:list={["py-[var(--space-section)]", i % 2 === 1 ? "" : ""]} style={i % 2 === 1 ? "background:var(--color-surface-alt)" : ""}>
+      <div class="container-x">
+        <div class="flex items-center gap-4">
+          <span class="h-px flex-1 bg-black/10"></span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-center" style="color:var(--color-primary)">{grupo.area}</h2>
+          <span class="h-px flex-1 bg-black/10"></span>
+        </div>
+        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {grupo.personas.map((p) => (
+            <PersonaCard nombre={p.data.nombre} rol={p.data.rol} descripcion={p.data.descripcion} foto={p.data.foto} />
+          ))}
+        </div>
+      </div>
+    </section>
+  ))}
+</BaseLayout>

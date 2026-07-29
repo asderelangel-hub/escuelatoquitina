@@ -1,0 +1,64 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import NoticiaCard from "../../components/NoticiaCard.astro";
+
+const posts = (await getCollection("noticias", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+
+const categorias = [...new Set(posts.map((p) => p.data.categoria))].sort();
+---
+<BaseLayout
+  title="Noticias · Escuela Nuevo Toqui Caupolicán"
+  description="Noticias y vida escolar de la Escuela Nuevo Toqui Caupolicán: eventos, logros deportivos, cultura mapuche, efemérides y actividades de nuestra comunidad educativa."
+>
+  <PageHeader kicker="Vida escolar" titulo="Noticias de nuestra comunidad"
+    bajada="Eventos, logros, cultura y las historias que hacen de la Nuevo Toqui una comunidad viva." />
+
+  <section class="py-[var(--space-section)] lg:py-[var(--space-section-lg)]">
+    <div class="container-x">
+      <!-- Filtros -->
+      <div class="flex flex-wrap gap-2 mb-10" role="tablist">
+        <button data-cat="all" class="filtro is-active px-4 py-2 rounded-full text-sm font-bold transition-colors">Todas</button>
+        {categorias.map((c) => (
+          <button data-cat={c} class="filtro px-4 py-2 rounded-full text-sm font-bold transition-colors">{c}</button>
+        ))}
+      </div>
+
+      <div id="grid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {posts.map((p) => (
+          <div class="post-item" data-cat={p.data.categoria}>
+            <NoticiaCard slug={p.id} title={p.data.title} description={p.data.description}
+              cover={p.data.cover} categoria={p.data.categoria} pubDate={p.data.pubDate} />
+          </div>
+        ))}
+      </div>
+      <p id="empty" class="hidden text-center text-[var(--color-muted)] py-12">No hay noticias en esta categoría.</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .filtro { background: var(--color-surface-alt); color: var(--color-ink); }
+  .filtro:hover { background: color-mix(in srgb, var(--color-gold) 40%, transparent); }
+  .filtro.is-active { background: var(--color-primary); color: #fff; }
+</style>
+
+<script>
+  const botones = document.querySelectorAll<HTMLButtonElement>(".filtro");
+  const items = document.querySelectorAll<HTMLElement>(".post-item");
+  const empty = document.getElementById("empty");
+  botones.forEach((b) => b.addEventListener("click", () => {
+    botones.forEach((x) => x.classList.remove("is-active"));
+    b.classList.add("is-active");
+    const cat = b.dataset.cat;
+    let visibles = 0;
+    items.forEach((it) => {
+      const show = cat === "all" || it.dataset.cat === cat;
+      it.classList.toggle("hidden", !show);
+      if (show) visibles++;
+    });
+    empty?.classList.toggle("hidden", visibles > 0);
+  }));
+</script>

@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/mulish";
+@import "./tokens.css";
+
+/* ============================================================
+   GLOBAL — Escuela Nuevo Toqui Caupolicán
+   ============================================================ */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
+::selection {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  /* Sin color fijo: heredan (ink en fondo claro por body; blanco sobre
+     secciones con .text-white). Evita que títulos en fondo oscuro salgan negros. */
+  color: inherit;
+  font-optical-sizing: auto;
+}
+h1 { line-height: 1.03; letter-spacing: -0.03em; }
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+/* Eyebrow / kicker */
+.kicker {
+  font-family: var(--font-body);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  color: var(--color-primary);
+}
+
+/* Subrayado marcador tipo sol */
+.marker {
+  background: linear-gradient(transparent 62%, color-mix(in srgb, var(--color-gold) 60%, transparent) 62%);
+  padding: 0 0.08em;
+}
+
+/* Motivo de rayos del sol (isotipo) — fondo decorativo sutil */
+.rayos {
+  background-image: repeating-linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--color-gold) 22%, transparent) 0 2px,
+    transparent 2px 26px
+  );
+}
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: var(--radius-button);
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+  transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-primary:hover { background: var(--color-primary-dark); }
+.btn-accent { background: var(--color-accent); color: var(--color-ink); box-shadow: var(--shadow-soft); }
+.btn-accent:hover { background: var(--color-gold); }
+.btn-ghost { border: 1.5px solid color-mix(in srgb, var(--color-ink) 20%, transparent); color: var(--color-ink); }
+.btn-ghost:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* Contenedor estándar */
+.container-x { max-width: 76rem; margin-inline: auto; padding-inline: 1.25rem; }
+
+/* Prosa de noticias */
+.prosa { max-width: 44rem; }
+.prosa p { margin: 1.1rem 0; line-height: 1.8; color: color-mix(in srgb, var(--color-ink) 90%, transparent); }
+.prosa h2 { font-size: 1.6rem; margin: 2.2rem 0 0.8rem; }
+.prosa h3 { font-size: 1.3rem; margin: 1.8rem 0 0.6rem; }
+.prosa img { border-radius: var(--radius-card); margin: 1.6rem 0; box-shadow: var(--shadow-soft); width: 100%; height: auto; }
+.prosa a { color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; }
+.prosa ul { margin: 1rem 0; padding-left: 1.3rem; list-style: disc; }
+.prosa li { margin: 0.4rem 0; line-height: 1.7; }
+.prosa figure { margin: 1.6rem 0; }
+.prosa figcaption { font-size: 0.85rem; color: var(--color-muted); text-align: center; margin-top: 0.4rem; }
+.prosa blockquote { border-left: 3px solid var(--color-accent); padding-left: 1rem; font-style: italic; color: var(--color-muted); margin: 1.4rem 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation: none !important; transition: none !important; }
+}

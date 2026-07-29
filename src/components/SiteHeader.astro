@@ -1,0 +1,103 @@
+---
+import { withBase } from "../lib/base";
+import { nav, site } from "../data/site";
+interface Props { transparent?: boolean }
+const { transparent = false } = Astro.props;
+const current = Astro.url.pathname.replace(/\/$/, "") || "/";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const isActive = (href: string) => {
+  const full = (base + href).replace(/\/$/, "") || "/";
+  return href === "/" ? current === (base || "/") : current.startsWith(full);
+};
+---
+<header
+  id="site-header"
+  data-transparent={transparent ? "true" : "false"}
+  class:list={[
+    "fixed top-0 inset-x-0 z-50 transition-all duration-300",
+    transparent ? "bg-transparent" : "bg-[var(--color-surface)]/95 backdrop-blur shadow-[var(--shadow-soft)]",
+  ]}
+>
+  <div class="container-x flex items-center justify-between h-[4.75rem]">
+    <a href={withBase("/")} class="flex items-center gap-3 shrink-0" aria-label="Inicio">
+      <img src={withBase("/images/site/iso-toqui.png")} alt="" width="44" height="44" class="h-11 w-auto" />
+      <span class="hidden sm:flex flex-col leading-tight">
+        <span id="brand-1" class="font-[var(--font-display)] font-extrabold text-[1.02rem] tracking-tight" style="color:var(--color-primary)">Nuevo Toqui</span>
+        <span id="brand-2" class="text-[0.72rem] font-bold uppercase tracking-[0.16em]" style="color:var(--color-earth)">Caupolicán · Cañete</span>
+      </span>
+    </a>
+
+    <nav class="hidden lg:flex items-center gap-1" aria-label="Principal">
+      {nav.map((item) => (
+        <a
+          href={withBase(item.href)}
+          class:list={[
+            "nav-link px-3 py-2 rounded-md text-[0.92rem] font-semibold transition-colors",
+            isActive(item.href) ? "is-active" : "",
+          ]}
+        >{item.label}</a>
+      ))}
+    </nav>
+
+    <a href={withBase("/contacto")} class="hidden lg:inline-flex btn btn-primary !py-2.5 !px-4 text-sm">Matrículas</a>
+
+    <button id="menu-btn" class="lg:hidden p-2 -mr-2" aria-label="Abrir menú" aria-expanded="false">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Menú móvil -->
+  <div id="mobile-menu" class="lg:hidden hidden bg-[var(--color-surface)] border-t border-black/10 shadow-lg">
+    <nav class="container-x py-3 flex flex-col" aria-label="Móvil">
+      {nav.map((item) => (
+        <a href={withBase(item.href)}
+          class:list={["py-3 px-2 font-semibold border-b border-black/5", isActive(item.href) ? "is-active" : ""]}
+        >{item.label}</a>
+      ))}
+      <a href={withBase("/contacto")} class="btn btn-primary mt-4 justify-center">Matrículas</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .nav-link { color: var(--color-ink); }
+  .nav-link:hover { color: var(--color-primary); background: color-mix(in srgb, var(--color-gold) 18%, transparent); }
+  .nav-link.is-active { color: var(--color-primary); }
+  /* Estado transparente sobre hero oscuro */
+  #site-header[data-transparent="true"]:not(.scrolled) .nav-link { color: #fff; }
+  #site-header[data-transparent="true"]:not(.scrolled) .nav-link:hover { color: var(--color-gold); background: rgba(255,255,255,.12); }
+  #site-header[data-transparent="true"]:not(.scrolled) #brand-1 { color: #fff; }
+  #site-header[data-transparent="true"]:not(.scrolled) #brand-2 { color: var(--color-gold); }
+  #site-header[data-transparent="true"]:not(.scrolled) #menu-btn { color: #fff; }
+</style>
+
+<script>
+  const header = document.getElementById("site-header");
+  const onScroll = () => {
+    if (!header) return;
+    if (window.scrollY > 24) {
+      header.classList.add("scrolled");
+      if (header.dataset.transparent === "true") {
+        header.classList.add("bg-[var(--color-surface)]/95", "backdrop-blur", "shadow-[var(--shadow-soft)]");
+        header.classList.remove("bg-transparent");
+      }
+    } else {
+      header.classList.remove("scrolled");
+      if (header.dataset.transparent === "true") {
+        header.classList.remove("bg-[var(--color-surface)]/95", "backdrop-blur", "shadow-[var(--shadow-soft)]");
+        header.classList.add("bg-transparent");
+      }
+    }
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  const btn = document.getElementById("menu-btn");
+  const menu = document.getElementById("mobile-menu");
+  btn?.addEventListener("click", () => {
+    const open = menu?.classList.toggle("hidden") === false;
+    btn.setAttribute("aria-expanded", String(open));
+  });
+</script>

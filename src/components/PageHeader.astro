@@ -1,0 +1,14 @@
+---
+import { withBase } from "../lib/base";
+interface Props { kicker?: string; titulo: string; bajada?: string }
+const { kicker, titulo, bajada } = Astro.props;
+---
+<section class="relative overflow-hidden text-white pt-32 pb-14" style="background:var(--color-primary)">
+  <div class="rayos absolute inset-0 opacity-25"></div>
+  <img src={withBase("/images/site/iso-toqui-white.png")} alt="" class="absolute -right-8 -bottom-10 h-56 w-auto opacity-10 pointer-events-none" />
+  <div class="container-x relative">
+    {kicker && <p class="kicker !text-[var(--color-gold)]">{kicker}</p>}
+    <h1 class="mt-3 text-4xl sm:text-5xl font-black max-w-3xl">{titulo}</h1>
+    {bajada && <p class="mt-4 text-white/85 text-lg max-w-2xl leading-relaxed">{bajada}</p>}
+  </div>
+</section>

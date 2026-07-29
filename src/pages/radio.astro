@@ -1,0 +1,23 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import RadioPlayer from "../components/RadioPlayer.astro";
+import { site } from "../data/site";
+---
+<BaseLayout
+  title="Radio en Vivo · Escuela Nuevo Toqui Caupolicán"
+  description="Escucha Radio Toqui Caupolicán en vivo: la voz de nuestra comunidad educativa, con música, cultura e información de la Escuela Nuevo Toqui Caupolicán de Cañete."
+>
+  <PageHeader kicker="Radio Toqui Caupolicán" titulo="Escúchanos en vivo"
+    bajada="La radio escolar es la voz de nuestra comunidad. Sintonízala desde cualquier lugar." />
+
+  <section class="py-[var(--space-section)] lg:py-[var(--space-section-lg)]">
+    <div class="container-x">
+      <RadioPlayer />
+      <p class="text-center text-sm text-[var(--color-muted)] mt-8 max-w-md mx-auto">
+        Si el reproductor no inicia, tu navegador puede estar bloqueando el audio automático.
+        Presiona <strong>Escuchar en vivo</strong> nuevamente.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
