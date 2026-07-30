@@ -7,9 +7,15 @@ dist/
 .env
 .env.*
 
-# TinaCMS generado (se regenera en cada build)
+# TinaCMS: el admin y el cliente TS se regeneran en cada build,
+# pero los JSON de esquema deben COMMITEARSE para que TinaCloud
+# configure el esquema e indexe la rama.
 public/admin/
-tina/__generated__/
+tina/__generated__/*
+!tina/__generated__/_graphql.json
+!tina/__generated__/_lookup.json
+!tina/__generated__/_schema.json
+!tina/__generated__/config.prebuild.jsx
 
 # SO
 .DS_Store
