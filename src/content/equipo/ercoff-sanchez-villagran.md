@@ -1,7 +1,8 @@
 ---
-nombre: "Ercoff Sánchez Villagran"
+nombre: "Ercoff Sánchez Villagrán"
 rol: "Educador de Párvulo"
 area: "Educación Pre-escolar"
-descripcion: "Pedagogo en Educación de Párvulos, Licenciado en Educación."
+descripcion: "Pedagogía en Educación de Párvulos."
+foto: "/images/equipo/ercoff-sanchez-villagran.webp"
 orden: 9
 ---
