@@ -67,8 +67,7 @@ export default defineConfig({
           {
             type: "string", name: "area", label: "Área", required: true,
             options: [
-              "Gestión", "Educación Pre-escolar", "Primer Ciclo",
-              "Segundo Ciclo", "Equipo Multidisciplinario",
+              "Equipo Directivo", "Docentes", "Equipo Multidisciplinario", "Asistentes de Aula", "Administración", "Conductores", "Auxiliares de Aseo",
             ],
           },
           { type: "string", name: "descripcion", label: "Formación / descripción", ui: { component: "textarea" } },

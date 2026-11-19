@@ -1,7 +1,8 @@
 ---
 nombre: "Magdalena Catrilelbun Aniñir"
-rol: "Educadora"
-area: "Primer Ciclo"
-descripcion: "Licenciada en Pedagogía en Educación Diferencial Mención TEL e Inclusión Educativa."
-orden: 15
+rol: "Educadora Diferencial"
+area: "Docentes"
+descripcion: "Profesora de Educación Diferencial con Mención en TEL e Inclusión Educativa. Postítulo en Discapacidad Intelectual. Diplomado en NEE en Contexto Educativo."
+foto: "/images/equipo/magdalena-catrilelbun-aninir.webp"
+orden: 27
 ---

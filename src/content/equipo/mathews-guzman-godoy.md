@@ -1,8 +1,8 @@
 ---
 nombre: "Mathews Guzmán Godoy"
 rol: "Docente"
-area: "Segundo Ciclo"
+area: "Docentes"
 descripcion: "Profesor de Educación Física con Mención en Gestión Deportiva."
 foto: "/images/equipo/mathews-guzman-godoy.webp"
-orden: 24
+orden: 25
 ---

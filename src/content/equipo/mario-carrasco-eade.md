@@ -2,6 +2,7 @@
 nombre: "Mario Carrasco Eade"
 rol: "Psicólogo"
 area: "Equipo Multidisciplinario"
-descripcion: "Psicólogo, Licenciado en Psicología."
-orden: 26
+descripcion: "Licenciado en Psicología. Diplomado en Terapias Relacionales Integrativas."
+foto: "/images/equipo/mario-carrasco-eade.webp"
+orden: 40
 ---

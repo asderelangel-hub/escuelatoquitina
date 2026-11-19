@@ -1,7 +1,8 @@
 ---
 nombre: "Gema Mondaca Ruiz"
 rol: "Docente"
-area: "Segundo Ciclo"
+area: "Docentes"
 descripcion: "Profesora de Educación General Básica, Licenciada en Educación."
-orden: 19
+foto: "/images/equipo/gema-mondaca-ruiz.webp"
+orden: 18
 ---

@@ -1,7 +1,8 @@
 ---
 nombre: "Gloria Melo Cartes"
-rol: "Educadora"
-area: "Educación Pre-escolar"
-descripcion: "Psicopedagoga y Educadora Diferencial con Mención en TEL-DI, Licenciada en Educación."
-orden: 10
+rol: "Educadora Diferencial"
+area: "Docentes"
+descripcion: "Profesora de Educación Diferencial con Mención en Trastorno del Lenguaje y Discapacidad Intelectual. Psicopedagoga, Licenciada en Educación."
+foto: "/images/equipo/gloria-melo-cartes.webp"
+orden: 26
 ---

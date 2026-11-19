@@ -1,7 +1,7 @@
 ---
 nombre: "Jessica Rodríguez"
-rol: "Educadora"
-area: "Segundo Ciclo"
+rol: "Educadora Diferencial"
+area: "Docentes"
 descripcion: "Profesora de Educación Diferencial con Mención en Deficiencia Intelectual."
-orden: 25
+orden: 31
 ---

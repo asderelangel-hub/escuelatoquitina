@@ -1,8 +1,8 @@
 ---
 nombre: "Francisca Villegas Bravo"
 rol: "Docente"
-area: "Primer Ciclo"
+area: "Docentes"
 descripcion: "Profesora de Educación Básica."
 foto: "/images/equipo/francisca-villegas-bravo.webp"
-orden: 12
+orden: 13
 ---

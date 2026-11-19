@@ -1,7 +1,8 @@
 ---
 nombre: "María Manríquez Núñez"
-rol: "Asistente de aula"
-area: "Primer Ciclo"
-descripcion: "Asistente de la Educación Parvularia y Básica."
-orden: 16
+rol: "Asistente de Aula"
+area: "Asistentes de Aula"
+descripcion: "Técnico en Educación Parvularia con Mención en Básica."
+foto: "/images/equipo/maria-manriquez-nunez.webp"
+orden: 53
 ---

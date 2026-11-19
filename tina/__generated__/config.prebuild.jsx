@@ -71,11 +71,13 @@ var config_default = defineConfig({
             label: "\xC1rea",
             required: true,
             options: [
-              "Gesti\xF3n",
-              "Educaci\xF3n Pre-escolar",
-              "Primer Ciclo",
-              "Segundo Ciclo",
-              "Equipo Multidisciplinario"
+              "Equipo Directivo",
+              "Docentes",
+              "Equipo Multidisciplinario",
+              "Asistentes de Aula",
+              "Administraci\xF3n",
+              "Conductores",
+              "Auxiliares de Aseo"
             ]
           },
           { type: "string", name: "descripcion", label: "Formaci\xF3n / descripci\xF3n", ui: { component: "textarea" } },
