@@ -67,7 +67,7 @@ export default defineConfig({
           {
             type: "string", name: "area", label: "Área", required: true,
             options: [
-              "Equipo Directivo", "Docentes", "Equipo Multidisciplinario", "Asistentes de Aula", "Administración", "Conductores", "Auxiliares de Aseo",
+              "Equipo Directivo", "Docentes", "Equipo Multidisciplinario", "Asistentes de Aula", "Biblioteca CRA", "Inspectoría y Administración", "Conductores", "Auxiliares de Aseo",
             ],
           },
           { type: "string", name: "descripcion", label: "Formación / descripción", ui: { component: "textarea" } },

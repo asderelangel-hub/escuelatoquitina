@@ -75,7 +75,8 @@ var config_default = defineConfig({
               "Docentes",
               "Equipo Multidisciplinario",
               "Asistentes de Aula",
-              "Administraci\xF3n",
+              "Biblioteca CRA",
+              "Inspector\xEDa y Administraci\xF3n",
               "Conductores",
               "Auxiliares de Aseo"
             ]
