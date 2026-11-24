@@ -13,7 +13,10 @@ export const site = {
   saludoMapudungun: "Kümemülepayaymün",
   radioStream: "https://stream.zeno.fm/0ckvlreznj3tv",
   radioNombre: "Radio Toqui Caupolicán",
-  facebook: "https://facebook.com/nuevotoqui.caupolican",
+  facebook: "https://www.facebook.com/Toquicaupolican",
+  facebookUsuario: "Toquicaupolican",
+  instagram: "https://www.instagram.com/escuelanuevotoquicauplican/",
+  instagramUsuario: "escuelanuevotoquicauplican",
 };
 
 export const nav = [

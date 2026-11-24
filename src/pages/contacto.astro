@@ -52,7 +52,13 @@ const FORM_ACTION = "/contact.php";
             <span class="grid place-items-center h-11 w-11 rounded-xl text-white shrink-0" style="background:var(--color-primary)">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.25-1.5 1.5-1.5h1.6V4.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.1v2.3H7.9V14h2.3v8h3.3Z"/></svg>
             </span>
-            <div><p class="font-bold">Facebook</p><a href={site.facebook} target="_blank" rel="noopener" class="text-[var(--color-muted)] hover:text-[var(--color-primary)]">nuevotoqui.caupolican</a></div>
+            <div><p class="font-bold">Facebook</p><a href={site.facebook} target="_blank" rel="noopener" class="text-[var(--color-muted)] hover:text-[var(--color-primary)]">{site.facebookUsuario}</a></div>
+          </li>
+          <li class="flex gap-4">
+            <span class="grid place-items-center h-11 w-11 rounded-xl text-white shrink-0" style="background:var(--color-primary)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+            </span>
+            <div><p class="font-bold">Instagram</p><a href={site.instagram} target="_blank" rel="noopener" class="text-[var(--color-muted)] hover:text-[var(--color-primary)] break-all">@{site.instagramUsuario}</a></div>
           </li>
         </ul>
 
