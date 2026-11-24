@@ -1,0 +1,993 @@
+---
+// Editor de noticias para la escuela: pega lo que entrega ChatGPT, elige fotos, revisa y publica.
+// Guarda a través de la API del editor (Worker de Pandora Studio: scripts/editor-web en el repo
+// OneClickLanding), que hace commit en este repo → el deploy automático de GitHub Actions publica.
+// La vista previa copia el marcado de noticias/[slug].astro y NoticiaCard.astro: si cambian, actualizar aquí.
+import "../styles/global.css";
+import { withBase } from "../lib/base";
+import instrucciones from "../data/editor/instrucciones-chatgpt.md?raw";
+
+const API = import.meta.env.PUBLIC_EDITOR_API || "https://pandora-editor.REEMPLAZAR.workers.dev/escuela-toqui";
+
+// Mismas opciones que tina/config.ts → noticias.categoria
+const categorias = [
+  "Noticias", "buenas noticias", "Eventos Educativos", "Efemérides", "DEPORTE", "Interculturalidad",
+  "Cultura", "Concursos Educativos", "Registros Fotográficos", "Primer Ciclo", "Segundo Ciclo",
+];
+---
+<!doctype html>
+<html lang="es-CL">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Editor de noticias · Escuela Nuevo Toqui Caupolicán</title>
+    <meta name="theme-color" content="#5e0f0f" />
+    <link rel="icon" type="image/svg+xml" href={withBase("/favicon.svg")} />
+  </head>
+  <body class="min-h-screen" data-api={API} data-base={import.meta.env.BASE_URL} data-categorias={JSON.stringify(categorias)}>
+    <header class="text-white" style="background:var(--color-primary-dark)">
+      <div class="marco flex items-center gap-3 py-3">
+        <img src={withBase("/images/site/iso-toqui-white.png")} alt="" class="h-9 w-auto" />
+        <div class="leading-tight">
+          <p class="font-bold text-lg" style="font-family:var(--font-display)">Editor de noticias</p>
+          <p class="text-xs text-white/70">Escuela Nuevo Toqui Caupolicán</p>
+        </div>
+        <a href={withBase("/noticias")} target="_blank" rel="noopener" class="ml-auto text-sm font-semibold text-white/80 hover:text-[var(--color-gold)]">Ver la web</a>
+        <button id="salir" type="button" hidden class="text-sm font-semibold text-white/80 hover:text-[var(--color-gold)]">Salir</button>
+      </div>
+    </header>
+
+    <noscript>
+      <p class="marco py-10">Para usar el editor necesitas activar JavaScript en tu navegador.</p>
+    </noscript>
+
+    <!-- ───────── Entrar ───────── -->
+    <section id="v-entrar" hidden class="marco marco-sm py-12">
+      <div class="tarjeta">
+        <h1 class="text-2xl font-bold">Entrar al editor</h1>
+        <p class="ayuda mt-2">Escribe la clave que te entregó Pandora Studio. Este equipo la recordará por 3 meses.</p>
+        <form id="f-entrar" class="mt-6 space-y-4">
+          <label class="campo">
+            <span>Clave</span>
+            <input id="clave" type="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" required />
+          </label>
+          <label class="flex items-center gap-2 text-sm text-[var(--color-muted)]">
+            <input id="ver-clave" type="checkbox" /> Mostrar la clave
+          </label>
+          <button class="btn btn-primary w-full justify-center" id="entrar-btn">Entrar</button>
+          <p id="entrar-error" class="error" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ───────── Editor ───────── -->
+    <section id="v-app" hidden>
+      <nav class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-[var(--color-surface-alt)]">
+        <div class="marco flex gap-1 overflow-x-auto" role="tablist">
+          <button type="button" class="tab" data-tab="nueva" role="tab" aria-selected="true">Nueva noticia</button>
+          <button type="button" class="tab" data-tab="lista" role="tab" aria-selected="false">Publicadas</button>
+          <button type="button" class="tab" data-tab="ayuda" role="tab" aria-selected="false">Ayuda</button>
+        </div>
+      </nav>
+
+      <div class="marco py-8">
+        <!-- Nueva / editar -->
+        <div data-panel="nueva" class="space-y-6">
+          <div id="editando" hidden class="aviso">
+            <p>Estás corrigiendo la noticia <strong id="editando-titulo"></strong>. Al publicar se reemplaza la versión que está en la web.</p>
+            <button type="button" id="cancelar-edicion" class="enlace mt-2">Cancelar y escribir una noticia nueva</button>
+          </div>
+          <div id="borrador-aviso" hidden class="aviso">
+            <p>Recuperamos lo que estabas escribiendo. Las fotos hay que elegirlas de nuevo.</p>
+            <button type="button" id="descartar-borrador" class="enlace mt-2">Descartar y empezar de cero</button>
+          </div>
+
+          <div class="tarjeta" id="paso-pegar">
+            <div class="paso"><span class="num">1</span><h2>Pega lo que te dio ChatGPT</h2></div>
+            <p class="ayuda">En ChatGPT, toca «Copiar» en el bloque de la noticia. Después toca este botón:</p>
+            <button type="button" id="pegar" class="btn btn-accent w-full justify-center mt-4">Pegar lo que me dio ChatGPT</button>
+            <details id="pegar-manual" class="mt-4">
+              <summary class="enlace">¿No funciona el botón? Pega aquí</summary>
+              <textarea id="bloque" rows="5" class="mt-2" placeholder="Mantén presionado aquí y elige «Pegar»"></textarea>
+            </details>
+            <p id="pegar-ok" class="ok" hidden></p>
+            <p id="pegar-error" class="error" hidden></p>
+            <p class="ayuda mt-3 text-sm">¿Prefieres escribirla tú? Llena directamente los campos del paso 2.</p>
+          </div>
+
+          <div class="tarjeta">
+            <div class="paso"><span class="num">2</span><h2>Revisa los textos</h2></div>
+            <div class="space-y-4">
+              <label class="campo">
+                <span>Título <em class="contador" data-para="title"></em></span>
+                <input id="title" maxlength="140" />
+              </label>
+              <label class="campo">
+                <span>Resumen <small>(se ve en la lista de noticias y en Google)</small> <em class="contador" data-para="description"></em></span>
+                <textarea id="description" rows="3" maxlength="320"></textarea>
+              </label>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="campo">
+                  <span>Categoría</span>
+                  <select id="categoria">{categorias.map((c) => <option value={c}>{c}</option>)}</select>
+                </label>
+                <label class="campo">
+                  <span>Fecha</span>
+                  <input id="pubDate" type="date" />
+                </label>
+              </div>
+              <label class="campo">
+                <span>Texto de la noticia</span>
+                <textarea id="texto" rows="12"></textarea>
+              </label>
+              <p class="ayuda text-sm">Deja una línea en blanco entre párrafos. Lo que va entre dos asteriscos, como **esto**, queda en negrita.</p>
+            </div>
+          </div>
+
+          <div class="tarjeta">
+            <div class="paso"><span class="num">3</span><h2>Elige las fotos</h2></div>
+            <p class="ayuda">La primera es la portada; las demás aparecen al final de la noticia. Se achican solas para que la web cargue rápido.</p>
+            <label class="btn btn-ghost w-full justify-center mt-4 cursor-pointer">
+              <input id="fotos-input" type="file" accept="image/*" multiple class="sr-only" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 8"/></svg>
+              Elegir fotos
+            </label>
+            <p id="fotos-estado" class="ayuda text-sm mt-3" hidden></p>
+            <ul id="fotos" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4"></ul>
+          </div>
+
+          <div class="tarjeta">
+            <div class="paso"><span class="num">4</span><h2>Revisa y publica</h2></div>
+            <div id="validacion" class="error" hidden></div>
+            <div class="flex flex-col sm:flex-row gap-3 mt-4">
+              <button type="button" id="ver" class="btn btn-ghost justify-center sm:flex-1">Ver cómo queda</button>
+              <button type="button" id="publicar" class="btn btn-primary justify-center sm:flex-1">Publicar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Publicadas -->
+        <div data-panel="lista" hidden>
+          <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-bold">Noticias publicadas</h2>
+            <button type="button" id="recargar" class="enlace ml-auto">Actualizar</button>
+          </div>
+          <p class="ayuda mt-2">Aquí puedes corregir una noticia o sacarla de la web. Ocultar no la borra: puedes volver a mostrarla cuando quieras.</p>
+          <p id="lista-estado" class="ayuda mt-6">Cargando…</p>
+          <ul id="lista" class="mt-6 space-y-3"></ul>
+        </div>
+
+        <!-- Ayuda -->
+        <div data-panel="ayuda" hidden class="space-y-6">
+          <div class="tarjeta">
+            <h2 class="text-xl font-bold">Cómo publicar una noticia</h2>
+            <ol class="pasos-lista">
+              <li>En ChatGPT, cuéntale qué pasó. Puedes mandarle tus notas, un audio, el afiche o fotos.</li>
+              <li>Toca «Copiar» en el bloque con la noticia que te entrega.</li>
+              <li>Entra a <strong>escuelatoqui.cl/editar</strong> y toca «Pegar lo que me dio ChatGPT».</li>
+              <li>Revisa los textos y elige las fotos. La primera es la portada.</li>
+              <li>Toca «Ver cómo queda» y después «Publicar». En 2 a 4 minutos aparece en la web.</li>
+            </ol>
+            <p class="ayuda mt-4">Si después ves un error, entra a «Publicadas», toca «Corregir», cambia lo necesario y vuelve a publicar.</p>
+          </div>
+
+          <div class="tarjeta">
+            <h2 class="text-xl font-bold">Prepara ChatGPT (una sola vez)</h2>
+            <ol class="pasos-lista">
+              <li>En ChatGPT, crea un proyecto nuevo y llámalo «Noticias web».</li>
+              <li>Abre las instrucciones del proyecto y pega el texto de abajo. Guarda.</li>
+              <li>Desde ahora, pide cada noticia dentro de ese proyecto. Por ejemplo: «Escribe la noticia del acto de fin de año» y le cuentas los detalles.</li>
+            </ol>
+            <button type="button" id="copiar-instrucciones" class="btn btn-accent w-full justify-center mt-5">Copiar las instrucciones</button>
+            <details class="mt-4">
+              <summary class="enlace">Ver las instrucciones</summary>
+              <pre id="instrucciones" class="mt-3 whitespace-pre-wrap text-sm leading-relaxed bg-[var(--color-surface)] rounded-[var(--radius-button)] p-4 max-h-96 overflow-auto">{instrucciones}</pre>
+            </details>
+          </div>
+
+          <div class="tarjeta">
+            <h2 class="text-xl font-bold">Si algo falla</h2>
+            <p class="ayuda mt-2">Lo que escribiste queda guardado en este equipo aunque cierres la página. Si la web muestra un error que no se arregla al intentarlo de nuevo, avísale a Pandora Studio con una captura de pantalla.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Vista previa ───────── -->
+    <div id="vista" hidden class="fixed inset-0 z-50 overflow-y-auto" style="background:var(--color-surface)">
+      <div class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[var(--color-surface-alt)]">
+        <div class="marco marco-lg flex flex-wrap items-center gap-2 py-3">
+          <p class="font-bold mr-auto">Vista previa</p>
+          <button type="button" id="vista-cerrar" class="btn btn-ghost">Volver</button>
+          <button type="button" id="vista-publicar" class="btn btn-primary">Publicar</button>
+        </div>
+      </div>
+      <div class="container-x py-8">
+        <p class="kicker">Así se verá en la lista de noticias</p>
+        <div id="vista-tarjeta" class="mt-4 max-w-sm"></div>
+      </div>
+      <div class="container-x"><p class="kicker">Así se verá la noticia</p></div>
+      <div id="vista-noticia" class="mt-4 bg-[var(--color-surface)]"></div>
+    </div>
+
+    <!-- ───────── Progreso ───────── -->
+    <div id="progreso" hidden class="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
+      <div class="tarjeta w-full max-w-md text-center" role="status" aria-live="polite">
+        <div id="prog-icono" class="mx-auto mb-4"></div>
+        <h2 id="prog-titulo" class="text-xl font-bold"></h2>
+        <p id="prog-texto" class="ayuda mt-2"></p>
+        <div id="prog-barra-caja" class="barra mt-5"><div id="prog-barra"></div></div>
+        <div id="prog-acciones" class="flex flex-col gap-2 mt-6"></div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  .marco { max-width: 48rem; margin-inline: auto; padding-inline: 1.25rem; }
+  .marco-sm { max-width: 28rem; }
+  .marco-lg { max-width: 64rem; }
+
+  @layer components {
+    .tarjeta { background: #fff; border-radius: var(--radius-card); box-shadow: var(--shadow-soft); padding: 1.5rem; }
+    .paso { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .paso h2 { font-size: 1.35rem; }
+    .paso .num { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 999px; font-weight: 800; color: var(--color-ink); background: linear-gradient(135deg, var(--color-gold), var(--color-accent)); }
+    .ayuda { color: var(--color-muted); line-height: 1.6; }
+    .campo { display: block; }
+    .campo > span { display: block; font-weight: 700; font-size: 0.92rem; margin-bottom: 0.35rem; }
+    .campo small { font-weight: 500; color: var(--color-muted); }
+    .contador { float: right; font-style: normal; font-weight: 600; font-size: 0.8rem; color: var(--color-muted); }
+    .contador.alerta { color: var(--color-primary); }
+    #v-app input:not([type="checkbox"]):not([type="file"]), #v-app select, #v-app textarea, #v-entrar input:not([type="checkbox"]) {
+      width: 100%; border: 1.5px solid color-mix(in srgb, var(--color-ink) 18%, transparent); border-radius: var(--radius-button);
+      padding: 0.7rem 0.85rem; background: #fff; font: inherit; color: var(--color-ink); line-height: 1.5;
+    }
+    #v-app input:focus, #v-app select:focus, #v-app textarea:focus, #v-entrar input:focus { outline: 2px solid var(--color-accent); outline-offset: 0; border-color: transparent; }
+    .error { margin-top: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--radius-button); background: #fdecea; color: #8e1b1b; font-weight: 600; line-height: 1.5; }
+    .ok { margin-top: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--radius-button); background: #e9f6ec; color: #1d5a2c; font-weight: 600; line-height: 1.5; }
+    .aviso { padding: 1rem 1.25rem; border-radius: var(--radius-card); background: color-mix(in srgb, var(--color-gold) 25%, #fff); line-height: 1.55; }
+    .enlace { color: var(--color-primary); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+    .tab { padding: 0.9rem 1rem; font-weight: 700; color: var(--color-muted); border-bottom: 3px solid transparent; white-space: nowrap; }
+    .tab[aria-selected="true"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+    .pasos-lista { margin-top: 1rem; padding-left: 1.4rem; list-style: decimal; }
+    .pasos-lista li { margin: 0.5rem 0; line-height: 1.6; }
+    .foto { position: relative; border-radius: var(--radius-button); overflow: hidden; background: var(--color-surface-alt); }
+    .foto img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+    .foto .etiqueta { position: absolute; top: 0.4rem; left: 0.4rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.2rem 0.5rem; border-radius: 999px; background: var(--color-primary); color: #fff; }
+    .foto .acciones { display: flex; justify-content: space-between; gap: 0.25rem; padding: 0.35rem; background: #fff; }
+    .foto .acciones button { flex: 1; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.2rem; border-radius: 0.4rem; color: var(--color-ink); background: var(--color-surface); }
+    .foto .acciones button:disabled { opacity: 0.35; }
+    .foto .acciones button.quitar { color: var(--color-primary); }
+    .barra { height: 0.5rem; border-radius: 999px; background: var(--color-surface-alt); overflow: hidden; }
+    .barra > div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--color-gold), var(--color-accent)); transition: width 0.4s ease; }
+    .girando { width: 2.5rem; height: 2.5rem; border-radius: 999px; border: 4px solid var(--color-surface-alt); border-top-color: var(--color-primary); animation: girar 0.9s linear infinite; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+    .icono-ok, .icono-mal { width: 3rem; height: 3rem; border-radius: 999px; display: grid; place-items: center; color: #fff; font-size: 1.6rem; font-weight: 800; }
+    .icono-ok { background: #2e7d43; }
+    .icono-mal { background: var(--color-primary); }
+    .fila-noticia { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.85rem; align-items: center; }
+    .fila-noticia img, .fila-noticia .sin-foto { width: 5.5rem; height: 4rem; object-fit: cover; border-radius: 0.5rem; background: var(--color-surface-alt); }
+    .fila-noticia .acciones { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .fila-noticia .acciones > * { font-size: 0.85rem; font-weight: 700; padding: 0.45rem 0.8rem; border-radius: var(--radius-button); background: var(--color-surface); color: var(--color-ink); }
+    .fila-noticia .acciones .peligro { color: var(--color-primary); }
+    .oculta-tag { display: inline-block; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 0.1rem 0.45rem; border-radius: 999px; background: var(--color-muted); color: #fff; margin-left: 0.35rem; }
+    @media (min-width: 640px) {
+      .fila-noticia { grid-template-columns: 5.5rem 1fr auto; }
+      .fila-noticia .acciones { grid-column: auto; flex-wrap: nowrap; }
+    }
+  }
+</style>
+
+<script>
+  // ═════════════ Configuración ═════════════
+  const cuerpo = document.body.dataset;
+  const API = cuerpo.api as string;
+  const BASE = (cuerpo.base || "/").replace(/\/$/, "");
+  const CATEGORIAS: string[] = JSON.parse(cuerpo.categorias || "[]");
+  const LS_SESION = "toqui-editor-sesion";
+  const LS_BORRADOR = "toqui-editor-borrador";
+  const CAMPOS = ["title", "description", "categoria", "pubDate", "texto"] as const;
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+  const conBase = (p: string) => (p.startsWith("/") ? BASE + p : p);
+  const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const lsLeer = (k: string) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
+  const lsGuardar = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+  const lsBorrar = (k: string) => { try { localStorage.removeItem(k); } catch {} };
+  const mostrar = (el: HTMLElement, si = true) => { el.hidden = !si; };
+
+  // ═════════════ Estado ═════════════
+  type Foto = { id: string; nueva: boolean; url: string; blob?: Blob; sha?: string; tipo?: string; ruta?: string };
+  let sesion: { token: string; vence: number } | null = lsLeer(LS_SESION);
+  if (sesion && sesion.vence < Date.now()) sesion = null;
+  let fotos: Foto[] = [];
+  let modo: "crear" | "editar" = "crear";
+  let slugEditando: string | null = null;
+  let tituloEditando = "";
+  let ocupado = false;
+
+  // ═════════════ API ═════════════
+  class ErrorApi extends Error {
+    constructor(msg: string, public status = 0, public codigo?: string) { super(msg); }
+  }
+
+  async function api(ruta: string, op: { method?: string; json?: unknown; texto?: string } = {}) {
+    const headers: Record<string, string> = {};
+    if (sesion) headers.Authorization = `Bearer ${sesion.token}`;
+    let body: string | undefined;
+    if (op.json !== undefined) { headers["Content-Type"] = "application/json"; body = JSON.stringify(op.json); }
+    if (op.texto !== undefined) { headers["Content-Type"] = "text/plain"; body = op.texto; }
+    let res: Response;
+    try {
+      res = await fetch(`${API}/${ruta}`, { method: op.method || "GET", headers, body });
+    } catch {
+      throw new ErrorApi("No hay conexión con el editor. Revisa tu internet e intenta de nuevo.");
+    }
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && ruta !== "entrar") salir(data.error || "Tu sesión venció. Vuelve a escribir la clave.");
+    if (!res.ok) throw new ErrorApi(data.error || `La web respondió con un error (${res.status}). Intenta de nuevo.`, res.status, data.codigo);
+    return data;
+  }
+
+  // ═════════════ Entrar / salir ═════════════
+  function iniciar() {
+    if (sesion) {
+      mostrar($("v-entrar"), false);
+      mostrar($("v-app"));
+      mostrar($("salir"));
+      restaurarBorrador();
+    } else {
+      mostrar($("v-app"), false);
+      mostrar($("salir"), false);
+      mostrar($("v-entrar"));
+      $("clave").focus();
+    }
+  }
+
+  function salir(mensaje?: string) {
+    sesion = null;
+    lsBorrar(LS_SESION);
+    cerrarProgreso();
+    mostrar($("vista"), false);
+    iniciar();
+    if (mensaje) { $("entrar-error").textContent = mensaje; mostrar($("entrar-error")); }
+  }
+
+  $("f-entrar").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = $<HTMLButtonElement>("entrar-btn");
+    btn.disabled = true;
+    btn.textContent = "Revisando…";
+    mostrar($("entrar-error"), false);
+    try {
+      const r = await api("entrar", { method: "POST", json: { clave: $<HTMLInputElement>("clave").value } });
+      sesion = { token: r.token, vence: r.vence };
+      lsGuardar(LS_SESION, sesion);
+      $<HTMLInputElement>("clave").value = "";
+      iniciar();
+    } catch (err) {
+      $("entrar-error").textContent = (err as Error).message;
+      mostrar($("entrar-error"));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Entrar";
+    }
+  });
+  $("ver-clave").addEventListener("change", (e) => {
+    $<HTMLInputElement>("clave").type = (e.target as HTMLInputElement).checked ? "text" : "password";
+  });
+  $("salir").addEventListener("click", () => salir());
+
+  // ═════════════ Pestañas ═════════════
+  let listaCargada = false;
+  function irA(tab: string) {
+    document.querySelectorAll<HTMLButtonElement>(".tab").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+    document.querySelectorAll<HTMLElement>("[data-panel]").forEach((p) => mostrar(p, p.dataset.panel === tab));
+    if (tab === "lista" && !listaCargada) cargarLista();
+    window.scrollTo({ top: 0 });
+  }
+  document.querySelectorAll<HTMLButtonElement>(".tab").forEach((b) => b.addEventListener("click", () => irA(b.dataset.tab!)));
+
+  // ═════════════ Formulario ═════════════
+  const campo = (c: string) => $<HTMLInputElement>(c);
+  const hoy = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  function leerFormulario() {
+    return Object.fromEntries(CAMPOS.map((c) => [c, campo(c).value])) as Record<(typeof CAMPOS)[number], string>;
+  }
+
+  function llenarFormulario(d: Partial<Record<(typeof CAMPOS)[number], string>>) {
+    for (const c of CAMPOS) if (d[c] !== undefined) campo(c).value = d[c]!;
+    if (!campo("pubDate").value) campo("pubDate").value = hoy();
+    if (!CATEGORIAS.includes(campo("categoria").value)) campo("categoria").value = "Noticias";
+    actualizarContadores();
+  }
+
+  function formularioVacio() {
+    return !campo("title").value.trim() && !campo("texto").value.trim() && !campo("description").value.trim();
+  }
+
+  function reiniciar() {
+    modo = "crear";
+    slugEditando = null;
+    tituloEditando = "";
+    fotos.forEach((f) => f.nueva && URL.revokeObjectURL(f.url));
+    fotos = [];
+    llenarFormulario({ title: "", description: "", texto: "", categoria: "Noticias", pubDate: hoy() });
+    $<HTMLTextAreaElement>("bloque").value = "";
+    ["pegar-ok", "pegar-error", "validacion", "editando", "borrador-aviso", "fotos-estado"].forEach((id) => mostrar($(id), false));
+    lsBorrar(LS_BORRADOR);
+    pintarFotos();
+  }
+
+  function actualizarContadores() {
+    document.querySelectorAll<HTMLElement>(".contador").forEach((el) => {
+      const n = campo(el.dataset.para!).value.trim().length;
+      if (el.dataset.para === "title") {
+        el.textContent = n ? `${n} / 90` : "";
+        el.classList.toggle("alerta", n > 90);
+      } else {
+        el.textContent = n ? `${n} letras (ideal 120 a 160)` : "";
+        el.classList.toggle("alerta", n > 0 && (n < 100 || n > 200));
+      }
+    });
+  }
+
+  // Borrador: lo escrito sobrevive a un cierre accidental (las fotos no).
+  let timerBorrador = 0;
+  function guardarBorrador() {
+    clearTimeout(timerBorrador);
+    timerBorrador = window.setTimeout(() => {
+      if (formularioVacio()) return lsBorrar(LS_BORRADOR);
+      lsGuardar(LS_BORRADOR, {
+        ...leerFormulario(), modo, slug: slugEditando, tituloEditando,
+        fotosExistentes: fotos.filter((f) => !f.nueva).map((f) => f.ruta),
+      });
+    }, 400);
+  }
+
+  function restaurarBorrador() {
+    const b = lsLeer(LS_BORRADOR);
+    if (!b) { if (!campo("pubDate").value) campo("pubDate").value = hoy(); return; }
+    llenarFormulario(b);
+    if (b.modo === "editar" && b.slug) {
+      modo = "editar";
+      slugEditando = b.slug;
+      tituloEditando = b.tituloEditando || b.title;
+      $("editando-titulo").textContent = `«${tituloEditando}»`;
+      mostrar($("editando"));
+      fotos = (b.fotosExistentes || []).map((r: string) => ({ id: idAzar(), nueva: false, ruta: r, url: conBase(r) }));
+      pintarFotos();
+    }
+    mostrar($("borrador-aviso"));
+  }
+
+  CAMPOS.forEach((c) => campo(c).addEventListener("input", () => { actualizarContadores(); guardarBorrador(); mostrar($("validacion"), false); }));
+  $("descartar-borrador").addEventListener("click", () => { if (confirm("¿Borrar todo lo escrito y empezar de cero?")) reiniciar(); });
+  $("cancelar-edicion").addEventListener("click", () => { if (confirm("¿Dejar de corregir esta noticia? Los cambios no guardados se pierden.")) reiniciar(); });
+
+  // ═════════════ Pegar el bloque de ChatGPT ═════════════
+  const ALIAS: Record<string, string> = {
+    title: "title", titulo: "title", "título": "title",
+    description: "description", resumen: "description", bajada: "description", descripcion: "description", "descripción": "description",
+    categoria: "categoria", "categoría": "categoria", category: "categoria",
+    pubdate: "pubDate", fecha: "pubDate", date: "pubDate",
+  };
+  const sinTildes = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+  function valorYaml(v: string) {
+    v = v.trim();
+    if (v.length > 1 && v.startsWith('"') && v.endsWith('"')) { try { return JSON.parse(v); } catch { return v.slice(1, -1); } }
+    if (v.length > 1 && v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1).replace(/''/g, "'");
+    if (v.length > 1 && v.startsWith("«") && v.endsWith("»")) return v.slice(1, -1);
+    return v;
+  }
+
+  function parsearBloque(txt: string) {
+    txt = txt.replace(/\r\n?/g, "\n").replace(/ /g, " ").trim();
+    txt = txt.replace(/^```[\w-]*\n/, "").replace(/\n```\s*$/, "").trim();
+    const datos: Record<string, string> = {};
+    let resto = txt;
+    const m = txt.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+    const lineasCabecera = m ? m[1].split("\n") : txt.split("\n");
+    let usadas = 0;
+    for (const linea of lineasCabecera) {
+      const mm = linea.match(/^\s*\**\s*([A-Za-zÁÉÍÓÚáéíóú]+)\s*\**\s*:\s*\**\s*(.*?)\s*\**\s*$/);
+      const clave = mm && ALIAS[sinTildes(mm[1])];
+      if (!clave) { if (m) continue; else break; }
+      datos[clave] = valorYaml(mm![2]);
+      usadas++;
+    }
+    resto = m ? m[2] : txt.split("\n").slice(usadas).join("\n");
+    resto = resto.trim();
+    if (datos.title) {
+      // Si la IA repitió el título como encabezado, se quita.
+      const primera = resto.split("\n")[0].replace(/^#+\s*/, "").replace(/\*+/g, "").trim();
+      if (sinTildes(primera) === sinTildes(datos.title)) resto = resto.split("\n").slice(1).join("\n").trim();
+    }
+    return { datos, texto: resto };
+  }
+
+  function aplicarBloque(txt: string) {
+    mostrar($("pegar-ok"), false);
+    mostrar($("pegar-error"), false);
+    const { datos, texto } = parsearBloque(txt);
+    if (!datos.title || texto.length < 30) {
+      $("pegar-error").textContent = "No reconozco lo que pegaste. En ChatGPT toca el botón «Copiar» del bloque de la noticia (no selecciones el texto a mano) y vuelve a intentarlo.";
+      mostrar($("pegar-error"));
+      return;
+    }
+    if (!formularioVacio() && !confirm("Ya hay una noticia escrita abajo. ¿Reemplazarla por lo que pegaste?")) return;
+    let categoria = "Noticias";
+    if (datos.categoria) categoria = CATEGORIAS.find((c) => sinTildes(c) === sinTildes(datos.categoria)) || "Noticias";
+    const fecha = /^\d{4}-\d{2}-\d{2}$/.test(datos.pubDate || "") ? datos.pubDate : campo("pubDate").value || hoy();
+    llenarFormulario({ title: datos.title, description: datos.description || "", categoria, pubDate: fecha, texto });
+    guardarBorrador();
+    $("pegar-ok").textContent = "Listo. Revisa los textos y elige las fotos.";
+    mostrar($("pegar-ok"));
+    $<HTMLDetailsElement>("pegar-manual").open = false;
+  }
+
+  $("pegar").addEventListener("click", async () => {
+    let txt = "";
+    try { txt = await navigator.clipboard.readText(); } catch {}
+    if (txt.trim()) return aplicarBloque(txt);
+    $<HTMLDetailsElement>("pegar-manual").open = true;
+    $("bloque").focus();
+    $("pegar-error").textContent = "Tu navegador no me dejó leer lo copiado. Mantén presionado el recuadro de arriba y elige «Pegar».";
+    mostrar($("pegar-error"));
+  });
+  $("bloque").addEventListener("paste", () => setTimeout(() => aplicarBloque($<HTMLTextAreaElement>("bloque").value), 0));
+  $("bloque").addEventListener("change", () => { const v = $<HTMLTextAreaElement>("bloque").value; if (v.trim()) aplicarBloque(v); });
+
+  // ═════════════ Fotos ═════════════
+  const idAzar = () => Math.random().toString(36).slice(2, 10);
+
+  async function cargarImagen(file: File): Promise<ImageBitmap | HTMLImageElement> {
+    if ("createImageBitmap" in window) {
+      try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch {}
+    }
+    return new Promise((ok, mal) => {
+      const img = new Image();
+      img.onload = () => ok(img);
+      img.onerror = mal;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function comprimir(file: File): Promise<Blob> {
+    const img = await cargarImagen(file);
+    const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+    const w = Math.round(img.width * k), h = Math.round(img.height * k);
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, w, h);
+    if ("close" in img) img.close();
+    return new Promise((ok, mal) => c.toBlob((b) => (b ? ok(b) : mal(new Error("sin blob"))), "image/jpeg", 0.82));
+  }
+
+  $<HTMLInputElement>("fotos-input").addEventListener("change", async (e) => {
+    const input = e.target as HTMLInputElement;
+    const archivos = [...(input.files || [])];
+    input.value = "";
+    if (!archivos.length) return;
+    const estado = $("fotos-estado");
+    const fallidas: string[] = [];
+    mostrar(estado);
+    for (let i = 0; i < archivos.length; i++) {
+      estado.textContent = `Preparando foto ${i + 1} de ${archivos.length}…`;
+      try {
+        const blob = await comprimir(archivos[i]);
+        fotos.push({ id: idAzar(), nueva: true, blob, url: URL.createObjectURL(blob), tipo: "jpg" });
+        pintarFotos();
+      } catch {
+        fallidas.push(archivos[i].name);
+      }
+    }
+    if (fallidas.length) {
+      estado.textContent = `No pude abrir ${fallidas.length === 1 ? "esta foto" : "estas fotos"}: ${fallidas.join(", ")}. Prueba con otra o envíala en JPG.`;
+    } else mostrar(estado, false);
+    mostrar($("validacion"), false);
+  });
+
+  function pintarFotos() {
+    const ul = $("fotos");
+    ul.innerHTML = "";
+    fotos.forEach((f, i) => {
+      const li = document.createElement("li");
+      li.className = "foto";
+      li.innerHTML = `
+        <img src="${esc(f.url)}" alt="" onerror="this.style.visibility='hidden'">
+        ${i === 0 ? '<span class="etiqueta">Portada</span>' : ""}
+        <div class="acciones">
+          <button type="button" data-accion="izq" aria-label="Mover antes" ${i === 0 ? "disabled" : ""}>◀</button>
+          <button type="button" data-accion="portada" ${i === 0 ? "disabled" : ""}>Portada</button>
+          <button type="button" data-accion="der" aria-label="Mover después" ${i === fotos.length - 1 ? "disabled" : ""}>▶</button>
+          <button type="button" data-accion="quitar" class="quitar" aria-label="Quitar foto">✕</button>
+        </div>`;
+      li.querySelectorAll<HTMLButtonElement>("button").forEach((b) =>
+        b.addEventListener("click", () => {
+          const a = b.dataset.accion;
+          const j = fotos.indexOf(f);
+          if (a === "quitar") { fotos.splice(j, 1); if (f.nueva) URL.revokeObjectURL(f.url); }
+          if (a === "portada") { fotos.splice(j, 1); fotos.unshift(f); }
+          if (a === "izq" && j > 0) [fotos[j - 1], fotos[j]] = [fotos[j], fotos[j - 1]];
+          if (a === "der" && j < fotos.length - 1) [fotos[j + 1], fotos[j]] = [fotos[j], fotos[j + 1]];
+          pintarFotos();
+          guardarBorrador();
+        }),
+      );
+      ul.appendChild(li);
+    });
+  }
+
+  // ═════════════ Validación ═════════════
+  function validar(): string[] {
+    const d = leerFormulario();
+    const e: string[] = [];
+    const t = d.title.trim().replace(/\s+/g, " ");
+    const r = d.description.trim().replace(/\s+/g, " ");
+    if (t.length < 5) e.push("Falta el título.");
+    if (t.length > 140) e.push("El título es demasiado largo (máximo 140 letras).");
+    if (r.length < 20) e.push("Falta el resumen (al menos una frase).");
+    if (r.length > 320) e.push("El resumen es demasiado largo (máximo 320 letras).");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d.pubDate)) e.push("Falta la fecha.");
+    if (d.texto.trim().length < 30) e.push("Falta el texto de la noticia.");
+    return e;
+  }
+
+  function mostrarErrores(errores: string[]) {
+    const v = $("validacion");
+    v.innerHTML = errores.length ? `<p>Antes de publicar:</p><ul class="list-disc pl-5 mt-1">${errores.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
+    mostrar(v, errores.length > 0);
+    if (errores.length) v.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // ═════════════ Vista previa (copia el marcado de la web) ═════════════
+  function esc(s: string) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  }
+  const urlSegura = (u: string) => (/^(https?:\/\/|mailto:|tel:|#)/i.test(u) ? u : u.startsWith("/") ? conBase(u) : "#");
+
+  function enLinea(s: string) {
+    // s ya viene escapado
+    return s
+      .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, a, u) => `<img src="${urlSegura(u)}" alt="${a}">`)
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => `<a href="${urlSegura(u)}" target="_blank" rel="noopener">${t}</a>`)
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, "$1<em>$2</em>")
+      .replace(/(^|[^\w])_([^_]+)_(?!\w)/g, "$1<em>$2</em>");
+  }
+
+  function markdown(src: string) {
+    return src
+      .replace(/\r\n?/g, "\n")
+      .split(/\n{2,}/)
+      .map((b) => {
+        const t = b.trim();
+        if (!t) return "";
+        const lineas = t.split("\n");
+        const h = t.match(/^(#{1,6})\s+(.*)$/);
+        if (h && lineas.length === 1) { const n = Math.min(Math.max(h[1].length, 2), 4); return `<h${n}>${enLinea(esc(h[2]))}</h${n}>`; }
+        if (/^(-{3,}|\*{3,})$/.test(t)) return "<hr>";
+        if (lineas.every((l) => /^\s*[-*+]\s+/.test(l))) return `<ul>${lineas.map((l) => `<li>${enLinea(esc(l.replace(/^\s*[-*+]\s+/, "")))}</li>`).join("")}</ul>`;
+        if (lineas.every((l) => /^\s*\d+[.)]\s+/.test(l))) return `<ol>${lineas.map((l) => `<li>${enLinea(esc(l.replace(/^\s*\d+[.)]\s+/, "")))}</li>`).join("")}</ol>`;
+        if (lineas.every((l) => /^\s*>/.test(l))) return `<blockquote><p>${enLinea(esc(lineas.map((l) => l.replace(/^\s*>\s?/, "")).join(" ")))}</p></blockquote>`;
+        return `<p>${enLinea(esc(t)).replace(/\n/g, " ")}</p>`;
+      })
+      .join("\n");
+  }
+
+  const fechaLarga = (iso: string) =>
+    new Date(`${iso}T12:00:00`).toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+
+  function abrirVista() {
+    const d = leerFormulario();
+    const portada = fotos[0]?.url;
+    const galeria = fotos.slice(1).map((f) => `<p><img src="${esc(f.url)}" alt=""></p>`).join("");
+    const fecha = /^\d{4}-\d{2}-\d{2}$/.test(d.pubDate) ? fechaLarga(d.pubDate) : "";
+    const titulo = esc(d.title.trim() || "(Sin título)");
+
+    $("vista-tarjeta").innerHTML = `
+      <article class="group flex flex-col rounded-[var(--radius-card)] overflow-hidden bg-white shadow-[var(--shadow-soft)]">
+        <div class="block overflow-hidden relative bg-[var(--color-surface-alt)] aspect-[16/10]">
+          ${portada
+            ? `<img src="${esc(portada)}" alt="" class="h-full w-full object-cover">`
+            : `<div class="h-full w-full grid place-items-center rayos"><img src="${conBase("/images/site/iso-toqui.png")}" alt="" class="h-16 opacity-60"></div>`}
+          <span class="absolute top-3 left-3 text-[0.7rem] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full text-white" style="background:var(--color-primary)">${esc(d.categoria)}</span>
+        </div>
+        <div class="flex flex-col p-5">
+          <time class="text-xs font-semibold uppercase tracking-wide" style="color:var(--color-earth)">${fecha}</time>
+          <h3 class="mt-2 font-bold leading-snug text-lg">${titulo}</h3>
+          <p class="mt-2 text-[var(--color-muted)] leading-relaxed line-clamp-2 text-sm">${esc(d.description)}</p>
+          <span class="mt-4 inline-flex items-center gap-1.5 font-bold text-sm" style="color:var(--color-primary)">Leer más</span>
+        </div>
+      </article>`;
+
+    $("vista-noticia").innerHTML = `
+      <article>
+        <header class="relative overflow-hidden text-white pt-16 pb-14" style="background:var(--color-primary-dark)">
+          ${portada ? `<img src="${esc(portada)}" alt="" class="absolute inset-0 h-full w-full object-cover opacity-30">` : ""}
+          <div class="rayos absolute inset-0 opacity-20"></div>
+          <div class="container-x relative max-w-3xl">
+            <span class="mt-5 inline-block text-[0.72rem] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full" style="background:var(--color-accent);color:var(--color-ink)">${esc(d.categoria)}</span>
+            <h1 class="mt-4 text-3xl sm:text-4xl font-black leading-tight">${titulo}</h1>
+            <time class="mt-4 block text-white/70 font-semibold">${fecha}</time>
+          </div>
+        </header>
+        <div class="py-[var(--space-section)]">
+          <div class="container-x">
+            ${portada ? `<img src="${esc(portada)}" alt="" class="rounded-[var(--radius-card)] shadow-[var(--shadow-card)] w-full max-h-[520px] object-cover mx-auto max-w-4xl">` : ""}
+            <div class="prosa mx-auto mt-10">${markdown(d.texto)}${galeria}</div>
+          </div>
+        </div>
+      </article>`;
+
+    mostrar($("vista"));
+    $("vista").scrollTop = 0;
+    document.body.style.overflow = "hidden";
+  }
+
+  function cerrarVista() {
+    mostrar($("vista"), false);
+    document.body.style.overflow = "";
+  }
+
+  $("ver").addEventListener("click", abrirVista);
+  $("vista-cerrar").addEventListener("click", cerrarVista);
+  $("vista-publicar").addEventListener("click", () => { cerrarVista(); publicar(); });
+
+  // ═════════════ Progreso ═════════════
+  function progreso(titulo: string, texto = "", pct: number | null = null, icono: "girando" | "ok" | "mal" = "girando") {
+    mostrar($("progreso"));
+    $("prog-titulo").textContent = titulo;
+    $("prog-texto").textContent = texto;
+    $("prog-icono").className = icono === "girando" ? "girando mx-auto mb-4" : `icono-${icono} mx-auto mb-4`;
+    $("prog-icono").textContent = icono === "ok" ? "✓" : icono === "mal" ? "!" : "";
+    mostrar($("prog-barra-caja"), pct !== null);
+    if (pct !== null) $("prog-barra").style.width = `${Math.max(3, Math.min(100, pct))}%`;
+    $("prog-acciones").innerHTML = "";
+  }
+
+  function accion(texto: string, clase: string, fn: () => void, href?: string) {
+    const el = document.createElement(href ? "a" : "button");
+    el.className = `btn ${clase} justify-center`;
+    el.textContent = texto;
+    if (href) { (el as HTMLAnchorElement).href = href; (el as HTMLAnchorElement).target = "_blank"; (el as HTMLAnchorElement).rel = "noopener"; }
+    else (el as HTMLButtonElement).type = "button";
+    el.addEventListener("click", fn);
+    $("prog-acciones").appendChild(el);
+  }
+
+  function cerrarProgreso() { mostrar($("progreso"), false); }
+
+  // Sigue el deploy automático (GitHub Actions) hasta que el cambio está en la web.
+  async function seguirDeploy(commit: string, textos: { titulo: string; listo: string; enlace?: string }, despues?: () => void) {
+    const inicio = Date.now();
+    const ESPERADO = 200_000;
+    progreso(textos.titulo, "Tarda entre 2 y 4 minutos. Puedes cerrar esta página: el cambio se publica igual.", 8);
+    while (Date.now() - inicio < 12 * 60_000) {
+      await esperar(8000);
+      $("prog-barra").style.width = `${Math.min(95, 8 + ((Date.now() - inicio) / ESPERADO) * 87)}%`;
+      let estado = "";
+      try { estado = (await api(`estado?commit=${commit}`)).estado; } catch { continue; }
+      if (estado === "listo") {
+        progreso("¡Listo! Ya está en la web", textos.listo, null, "ok");
+        if (textos.enlace) accion("Ver la noticia", "btn-primary", () => {}, textos.enlace);
+        despues?.();
+        return;
+      }
+      if (estado === "error") {
+        progreso("La web no se pudo actualizar", "El cambio quedó guardado, pero hubo un problema al publicarlo. Pandora Studio recibe un aviso automático y lo va a revisar; no hace falta que lo repitas.", null, "mal");
+        accion("Cerrar", "btn-ghost", cerrarProgreso);
+        return;
+      }
+    }
+    progreso("Está tardando más de lo normal", "El cambio quedó guardado. Revisa la web en unos minutos; si no aparece, avísale a Pandora Studio.", null, "mal");
+    accion("Cerrar", "btn-ghost", cerrarProgreso);
+  }
+
+  // ═════════════ Publicar ═════════════
+  const blobABase64 = (b: Blob) =>
+    new Promise<string>((ok, mal) => {
+      const r = new FileReader();
+      r.onload = () => ok(String(r.result).split(",")[1] || "");
+      r.onerror = mal;
+      r.readAsDataURL(b);
+    });
+
+  async function publicar(reemplazar = false) {
+    if (ocupado) return;
+    const errores = validar();
+    if (errores.length) return mostrarErrores(errores);
+    if (!fotos.length && !confirm("La noticia no tiene fotos. ¿Publicarla igual?")) return;
+
+    ocupado = true;
+    let repetirReemplazando = false;
+    try {
+      const nuevas = fotos.filter((f) => f.nueva && !f.sha);
+      for (let i = 0; i < nuevas.length; i++) {
+        progreso(`Subiendo foto ${i + 1} de ${nuevas.length}…`, "No cierres esta página mientras se suben las fotos.", (i / nuevas.length) * 100);
+        const r = await api("fotos", { method: "POST", texto: await blobABase64(nuevas[i].blob!) });
+        nuevas[i].sha = r.sha;
+        nuevas[i].tipo = r.tipo;
+      }
+      progreso("Guardando la noticia…", "", 100);
+      const d = leerFormulario();
+      let r: { slug: string; commit: string } | null = null;
+      try {
+        r = await api("noticias", {
+          method: "POST",
+          json: {
+            modo, slug: slugEditando, reemplazar, ...d,
+            fotos: fotos.map((f) => (f.nueva ? { sha: f.sha, tipo: f.tipo } : { ruta: f.ruta })),
+          },
+        });
+      } catch (e) {
+        if (!(e instanceof ErrorApi && e.codigo === "existe")) throw e;
+        cerrarProgreso();
+        repetirReemplazando = confirm("Ya hay una noticia publicada con este mismo título.\n\n¿Quieres reemplazarla por esta? Si es una noticia distinta, toca «Cancelar» y cambia el título.");
+      }
+      if (r) {
+        const { slug, commit } = r;
+        const titulo = d.title.trim();
+        const editaba = modo === "editar";
+        lsBorrar(LS_BORRADOR);
+        reiniciar();
+        listaCargada = false;
+        await seguirDeploy(
+          commit,
+          {
+            titulo: editaba ? "Corrección guardada. Publicando…" : "Noticia guardada. Publicando…",
+            listo: `«${titulo}» ya se ve en escuelatoqui.cl.`,
+            enlace: conBase(`/noticias/${slug}/`),
+          },
+          () => {
+            accion("Escribir otra noticia", "btn-ghost", () => { cerrarProgreso(); irA("nueva"); });
+            accion("Me equivoqué: ocultarla", "btn-ghost", () => cambiarVisible(slug, titulo, false));
+          },
+        );
+      }
+    } catch (e) {
+      progreso("No se pudo publicar", (e as Error).message, null, "mal");
+      accion("Cerrar e intentar de nuevo", "btn-ghost", cerrarProgreso);
+    } finally {
+      ocupado = false;
+    }
+    if (repetirReemplazando) publicar(true);
+  }
+
+  $("publicar").addEventListener("click", () => publicar());
+  window.addEventListener("beforeunload", (e) => { if (ocupado) { e.preventDefault(); e.returnValue = ""; } });
+
+  // ═════════════ Publicadas ═════════════
+  async function cargarLista() {
+    const estado = $("lista-estado");
+    const ul = $("lista");
+    estado.textContent = "Cargando…";
+    mostrar(estado);
+    ul.innerHTML = "";
+    try {
+      const { noticias } = await api("noticias");
+      listaCargada = true;
+      if (!noticias.length) { estado.textContent = "Todavía no hay noticias."; return; }
+      mostrar(estado, false);
+      for (const n of noticias) {
+        const li = document.createElement("li");
+        li.className = "tarjeta fila-noticia p-3";
+        const fecha = /^\d{4}-\d{2}-\d{2}$/.test(n.pubDate) ? fechaLarga(n.pubDate) : "";
+        li.innerHTML = `
+          ${n.cover ? `<img src="${esc(conBase(n.cover))}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'sin-foto rayos'}))">` : `<div class="sin-foto rayos"></div>`}
+          <div class="min-w-0">
+            <p class="font-bold leading-snug line-clamp-2">${esc(n.title)}</p>
+            <p class="text-xs text-[var(--color-muted)] mt-1">${esc(fecha)} · ${esc(n.categoria)}${n.visible ? "" : '<span class="oculta-tag">Oculta</span>'}</p>
+          </div>
+          <div class="acciones">
+            ${n.visible ? `<a href="${esc(conBase(`/noticias/${n.slug}/`))}" target="_blank" rel="noopener">Ver</a>` : ""}
+            <button type="button" data-accion="corregir">Corregir</button>
+            <button type="button" data-accion="visible" class="${n.visible ? "peligro" : ""}">${n.visible ? "Ocultar" : "Mostrar"}</button>
+          </div>`;
+        li.querySelector('[data-accion="corregir"]')!.addEventListener("click", () => corregir(n.slug));
+        li.querySelector('[data-accion="visible"]')!.addEventListener("click", () => cambiarVisible(n.slug, n.title, !n.visible));
+        ul.appendChild(li);
+      }
+    } catch (e) {
+      estado.textContent = (e as Error).message;
+    }
+  }
+  $("recargar").addEventListener("click", cargarLista);
+
+  // Separa las fotos que van al final del texto (galería) del resto.
+  function separarCuerpo(cuerpo: string) {
+    const lineas = cuerpo.replace(/\r\n?/g, "\n").trimEnd().split("\n");
+    const galeria: string[] = [];
+    while (lineas.length) {
+      const l = lineas[lineas.length - 1].trim();
+      if (!l) { lineas.pop(); continue; }
+      const m = l.match(/^!\[[^\]]*\]\((\/images\/noticias\/[^)\s]+)\)$/);
+      if (!m) break;
+      galeria.unshift(m[1]);
+      lineas.pop();
+    }
+    return { texto: lineas.join("\n").trim().replace(/&lt;/g, "<"), galeria };
+  }
+
+  async function corregir(slug: string) {
+    if (!formularioVacio() && !confirm("Tienes una noticia a medio escribir. ¿Descartarla para corregir esta otra?")) return;
+    progreso("Abriendo la noticia…");
+    try {
+      const { noticia: n } = await api(`noticias/${encodeURIComponent(slug)}`);
+      reiniciar();
+      const { texto, galeria } = separarCuerpo(n.cuerpo);
+      modo = "editar";
+      slugEditando = slug;
+      tituloEditando = n.title;
+      llenarFormulario({ title: n.title, description: n.description, categoria: n.categoria, pubDate: n.pubDate, texto });
+      if (!CATEGORIAS.includes(n.categoria)) {
+        // Categorías antiguas que ya no están en la lista: se conservan.
+        const op = document.createElement("option");
+        op.value = op.textContent = n.categoria;
+        campo("categoria").appendChild(op);
+        campo("categoria").value = n.categoria;
+      }
+      fotos = [...(n.cover ? [n.cover] : []), ...galeria].map((r) => ({ id: idAzar(), nueva: false, ruta: r, url: conBase(r) }));
+      pintarFotos();
+      $("editando-titulo").textContent = `«${n.title}»`;
+      mostrar($("editando"));
+      cerrarProgreso();
+      irA("nueva");
+      guardarBorrador();
+    } catch (e) {
+      progreso("No pude abrir la noticia", (e as Error).message, null, "mal");
+      accion("Cerrar", "btn-ghost", cerrarProgreso);
+    }
+  }
+
+  async function cambiarVisible(slug: string, titulo: string, visible: boolean) {
+    const pregunta = visible
+      ? `¿Volver a mostrar «${titulo}» en la web?`
+      : `¿Ocultar «${titulo}» de la web?\n\nNo se borra: puedes volver a mostrarla desde «Publicadas».`;
+    if (!confirm(pregunta)) return;
+    progreso("Guardando…");
+    try {
+      const r = await api(`noticias/${encodeURIComponent(slug)}/visible`, { method: "POST", json: { visible } });
+      listaCargada = false;
+      await seguirDeploy(r.commit, {
+        titulo: visible ? "Mostrando la noticia…" : "Ocultando la noticia…",
+        listo: visible ? `«${titulo}» volvió a la web.` : `«${titulo}» ya no aparece en la web.`,
+      }, () => accion("Cerrar", "btn-ghost", () => { cerrarProgreso(); if (!$("v-app").querySelector<HTMLElement>('[data-panel="lista"]')!.hidden) cargarLista(); }));
+    } catch (e) {
+      progreso("No se pudo guardar el cambio", (e as Error).message, null, "mal");
+      accion("Cerrar", "btn-ghost", cerrarProgreso);
+    }
+  }
+
+  // ═════════════ Ayuda ═════════════
+  $("copiar-instrucciones").addEventListener("click", async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    try {
+      await navigator.clipboard.writeText($("instrucciones").textContent || "");
+      btn.textContent = "¡Copiadas! Ahora pégalas en ChatGPT";
+    } catch {
+      $("instrucciones").closest("details")!.open = true;
+      const sel = window.getSelection();
+      const rango = document.createRange();
+      rango.selectNodeContents($("instrucciones"));
+      sel?.removeAllRanges();
+      sel?.addRange(rango);
+      btn.textContent = "Selecciona el texto de abajo y cópialo";
+    }
+  });
+
+  iniciar();
+</script>

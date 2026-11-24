@@ -34,7 +34,8 @@ export default defineConfig({
   markdown: {
     rehypePlugins: [rehypeBasePaths()],
   },
-  integrations: [sitemap()],
+  // /editar es la página privada del editor de noticias: fuera del sitemap.
+  integrations: [sitemap({ filter: (page) => !new URL(page).pathname.replace(/\/$/, '').endsWith('/editar') })],
   vite: {
     plugins: [tailwindcss()],
   },
