@@ -15,8 +15,8 @@ export const site = {
   radioNombre: "Radio Toqui Caupolicán",
   facebook: "https://www.facebook.com/Toquicaupolican",
   facebookUsuario: "Toquicaupolican",
-  instagram: "https://www.instagram.com/escuelanuevotoquicauplican/",
-  instagramUsuario: "escuelanuevotoquicauplican",
+  instagram: "https://www.instagram.com/escuelanuevotoquicaupolican/",
+  instagramUsuario: "escuelanuevotoquicaupolican",
 };
 
 export const nav = [
